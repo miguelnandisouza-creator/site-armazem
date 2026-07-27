@@ -11,14 +11,17 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { categories, formatPrice, products as demoProducts, type CatalogProduct } from "../data/catalog";
 import type { LocalProduct } from "@/features/admin/products/types";
+import { createClient } from "@/lib/supabase/client";
 
 const categoryIcons = { leaf: Leaf, croissant: Croissant, package: Package, bottle: Store, sandwich: ShoppingBasket, sparkles: Sparkles };
 const ACTIVATE_ALL_MIGRATION = "armazem:migration:activate-all-v1";
+const supabase = createClient();
 
 export function Storefront() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Mercearia");
   const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
+  const [offers, setOffers] = useState<CatalogProduct[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(24);
   const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>({});
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -33,6 +36,36 @@ export function Storefront() {
       setHydrated(true);
     });
     return () => cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    const now = new Date().toISOString();
+    supabase
+      .from("promotions")
+      .select("id,promotional_price_cents,products(id,ean,name,brand,unit,image_url,price_cents,stock,categories(name))")
+      .lte("starts_at", now)
+      .gte("ends_at", now)
+      .then(({ data }) => {
+        const activeOffers = (data || []).flatMap((promotion) => {
+          const product = Array.isArray(promotion.products) ? promotion.products[0] : promotion.products;
+          if (!product) return [];
+          const relation = Array.isArray(product.categories) ? product.categories[0] : product.categories;
+          return [{
+            id: hashBarcode(product.ean || product.id),
+            barcode: product.ean || "",
+            name: product.name,
+            brand: product.brand || "",
+            category: relation?.name || "Mercearia",
+            unit: product.unit || "",
+            price: promotion.promotional_price_cents / 100,
+            previousPrice: product.price_cents / 100,
+            image: product.image_url || "",
+            accent: "#fff1a8",
+            tag: "Oferta",
+            stock: product.stock,
+          }];
+        });
+        setOffers(activeOffers);
+      });
   }, []);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -120,13 +153,22 @@ export function Storefront() {
         </div>
       </section>
 
+      <section id="ofertas" className="border-y-4 border-[#111315] bg-[#ffd900] py-14 lg:py-20">
+        <div className="mx-auto max-w-[1380px] px-4 sm:px-6 lg:px-10">
+          <div className="mb-7"><p className="eyebrow">Preço bom de verdade</p><h2>Ofertas para aproveitar</h2><p className="mt-2 text-sm font-bold text-[#111315]/65">Somente promoções ativas por tempo limitado</p></div>
+          {offers.length ? <motion.div layout className="grid grid-cols-2 gap-x-3 gap-y-8 lg:grid-cols-3 xl:grid-cols-4">
+            {offers.map((product) => <ProductCard key={product.id} product={product} favorite={favorites.includes(product.id)} listed={list.includes(product.id)} onFavorite={() => toggle(product.id, setFavorites)} onList={() => toggle(product.id, setList)} />)}
+          </motion.div> : <div className="grid min-h-52 place-items-center border-2 border-dashed border-[#111315]/30 bg-white/35 p-8 text-center"><div><Sparkles className="mx-auto" /><p className="mt-4 font-black uppercase">Nenhuma oferta disponível no momento</p><p className="mt-2 text-sm">Confira os produtos pelas categorias abaixo.</p></div></div>}
+        </div>
+      </section>
+
       <section id="categorias" className="mx-auto max-w-[1380px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
         <div className="mb-7 flex items-end justify-between"><div><p className="eyebrow">Corredores</p><h2>Encontre sem perder tempo</h2></div><button onClick={() => { setCategory("Todos"); setVisibleLimit(24); }} className="hidden items-center gap-1 text-sm font-bold sm:flex">Ver todas as categorias <ChevronRight size={17} /></button></div>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-7">
           {categories.map((item) => {
             const Icon = categoryIcons[item.icon];
             const active = category === item.name;
-            return <button key={item.name} onClick={() => { setCategory(item.name); setVisibleLimit(24); }} className={`group flex min-h-28 flex-col items-center justify-center border-2 p-3 transition sm:min-h-36 ${active ? "border-[#111315] bg-[#ffd900] text-[#111315] shadow-[5px_5px_0_#111315]" : "border-[#111315]/15 bg-white hover:-translate-y-1 hover:border-[#111315]"}`}>
+            return <button key={item.name} onClick={() => { setCategory(item.name); setVisibleLimit(24); document.querySelector("#produtos")?.scrollIntoView({ behavior: "smooth" }); }} className={`group flex min-h-28 flex-col items-center justify-center border-2 p-3 transition sm:min-h-36 ${active ? "border-[#111315] bg-[#ffd900] text-[#111315] shadow-[5px_5px_0_#111315]" : "border-[#111315]/15 bg-white hover:-translate-y-1 hover:border-[#111315]"}`}>
               <span className="grid h-11 w-11 place-items-center rounded-full bg-[#111315] text-[#ffd900]"><Icon size={21} /></span>
               <span className="mt-3 text-xs font-extrabold sm:text-sm">{item.name}</span>
             </button>;
@@ -134,7 +176,7 @@ export function Storefront() {
         </div>
       </section>
 
-      <section id="ofertas" className="border-y-4 border-[#111315] bg-[#ffd900] py-14 lg:py-20">
+      <section id="produtos" className="border-y-4 border-[#111315] bg-[#f3f1e9] py-14 lg:py-20">
         <div className="mx-auto max-w-[1380px] px-4 sm:px-6 lg:px-10">
           <div className="mb-7 flex items-end justify-between gap-5"><div><p className="eyebrow">Preço bom de verdade</p><h2>{query ? `Resultados para “${query}”` : category !== "Todos" ? category : "Ofertas para aproveitar"}</h2><p className="mt-2 text-sm font-bold text-[#111315]/65">{visible.length} produtos encontrados</p></div><span className="hidden rotate-1 bg-[#111315] px-3 py-2 text-xs font-black uppercase text-[#ffd900] sm:block">Preços válidos esta semana</span></div>
           {category === "Todos" && !query
@@ -155,7 +197,7 @@ export function Storefront() {
 
       <footer className="border-t border-[#17251d]/10 px-4 py-8"><div className="mx-auto flex max-w-[1300px] flex-col justify-between gap-4 text-xs text-[#637067] sm:flex-row"><p>© 2026 Armazém Parada Obrigatória</p><Link href="/login" className="font-bold text-[#17251d]">Acesso administrativo</Link></div></footer>
       <nav className="fixed bottom-0 z-30 grid h-17 w-full grid-cols-4 border-t border-[#17251d]/10 bg-white md:hidden">
-        <a href="#" className="mobile-nav active"><Home size={19} />Início</a><a href="#ofertas" className="mobile-nav"><Search size={19} />Buscar</a><button className="mobile-nav" onClick={() => setCategory("Todos")}><Heart size={19} />Favoritos</button><button className="mobile-nav" onClick={() => setDrawer(true)}><ShoppingBasket size={19} />Lista</button>
+        <a href="#" className="mobile-nav active"><Home size={19} />Início</a><a href="#produtos" className="mobile-nav"><Search size={19} />Buscar</a><button className="mobile-nav" onClick={() => setCategory("Todos")}><Heart size={19} />Favoritos</button><button className="mobile-nav" onClick={() => setDrawer(true)}><ShoppingBasket size={19} />Lista</button>
       </nav>
       <AnimatePresence>{drawer && <ShoppingDrawer products={listedProducts} onClose={() => setDrawer(false)} onRemove={(id) => toggle(id, setList)} />}</AnimatePresence>
     </main>

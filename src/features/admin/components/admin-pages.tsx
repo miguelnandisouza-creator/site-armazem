@@ -7,11 +7,13 @@ import {
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useAdminProducts } from "../hooks/use-admin-products";
+import { createClient } from "@/lib/supabase/client";
 
 type Promotion = { id: string; productId: string; productName: string; normalPrice: number; promotionalPrice: number; startsAt: string; endsAt: string; active: boolean };
 type TeamUser = { id: string; name: string; email: string; role: string; active: boolean };
 const PROMOTIONS_KEY = "armazem:promotions";
 const USERS_KEY = "armazem:team-users";
+const supabase = createClient();
 
 export function AdminDashboard() {
   const products = useAdminProducts();
@@ -42,14 +44,30 @@ export function AdminDashboard() {
 
 export function PromotionsPage() {
   const products = useAdminProducts();
-  const [items, setItems] = usePersistentList<Promotion>(PROMOTIONS_KEY, []);
+  const [items, setItems] = useState<Promotion[]>([]);
   const [open, setOpen] = useState(false);
-  function save(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    supabase.from("promotions")
+      .select("id,product_id,promotional_price_cents,starts_at,ends_at,products(name,price_cents)")
+      .order("starts_at", { ascending: false })
+      .then(({ data }) => setItems((data || []).flatMap((row) => {
+        const product = Array.isArray(row.products) ? row.products[0] : row.products;
+        return product ? [{ id: row.id, productId: row.product_id, productName: product.name, normalPrice: product.price_cents / 100, promotionalPrice: row.promotional_price_cents / 100, startsAt: row.starts_at, endsAt: row.ends_at, active: true }] : [];
+      })));
+  }, []);
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const product = products.find((item) => item.id === data.get("productId"));
     if (!product) return;
-    setItems((current) => [{ id: crypto.randomUUID(), productId: product.id, productName: product.name, normalPrice: product.price, promotionalPrice: Number(data.get("promotionalPrice")), startsAt: String(data.get("startsAt")), endsAt: String(data.get("endsAt")), active: true }, ...current]);
+    const { data: store } = await supabase.from("stores").select("id").eq("slug", "armazem-parada-obrigatoria").single();
+    if (!store) return;
+    const startsAt = String(data.get("startsAt"));
+    const endsAt = String(data.get("endsAt"));
+    const promotionalPrice = Number(data.get("promotionalPrice"));
+    const { data: saved, error } = await supabase.from("promotions").insert({ store_id: store.id, product_id: product.id, promotional_price_cents: Math.round(promotionalPrice * 100), starts_at: new Date(startsAt).toISOString(), ends_at: new Date(endsAt).toISOString() }).select("id").single();
+    if (error) { alert(`Erro ao salvar promoção: ${error.message}`); return; }
+    setItems((current) => [{ id: saved.id, productId: product.id, productName: product.name, normalPrice: product.price, promotionalPrice, startsAt, endsAt, active: true }, ...current]);
     setOpen(false);
   }
   return <AdminPage title="Promoções" subtitle="Ofertas separadas do cadastro normal" action={<button onClick={() => setOpen(true)} className="admin-primary"><Tags size={18}/>Nova promoção</button>}>

@@ -3,7 +3,7 @@
 import {
   ArrowRight, Check, ChevronRight, Clock3, Croissant, Heart, Home, Leaf,
   MapPin, Menu, MessageCircle, Minus, Package, Plus, Search, ShoppingBasket,
-  Sparkles, Store, X,
+  Sparkles, Store, UserRound, X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -92,6 +92,7 @@ export function Storefront() {
             <ShoppingBasket size={19} />
             {list.length > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#f4c430] px-1 text-[10px] font-black text-[#17251d]">{list.length}</span>}
           </button>
+          <Link href="/login" className="grid h-10 w-10 place-items-center border-2 border-[#ffd900] text-[#ffd900] transition hover:bg-[#ffd900] hover:text-[#111315]" aria-label="Entrar ou criar conta"><UserRound size={22} /></Link>
           <button className="grid h-10 w-10 place-items-center border border-[#17251d]/12 lg:hidden" aria-label="Abrir menu"><Menu size={20} /></button>
         </div>
         <div className="px-4 pb-3 md:hidden">

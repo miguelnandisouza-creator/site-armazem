@@ -86,11 +86,30 @@ export function CategoriesPage() {
 }
 
 export function UsersPage() {
-  const initial = [{ id: "local-admin", name: "Administrador local", email: "admin@local.test", role: "Administrador", active: true }];
-  const [users, setUsers] = usePersistentList<TeamUser>(USERS_KEY, initial);
-  const [open, setOpen] = useState(false);
-  function add(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const data = new FormData(event.currentTarget); setUsers((current) => [...current, { id: crypto.randomUUID(), name: String(data.get("name")), email: String(data.get("email")), role: String(data.get("role")), active: true }]); setOpen(false); }
-  return <AdminPage title="Usuários" subtitle="Equipe e permissões para teste" action={<button onClick={() => setOpen(true)} className="admin-primary"><UserPlus size={18}/>Novo usuário</button>}><div className="overflow-x-auto border-2 border-[#111315] bg-white"><table className="w-full min-w-[650px]"><thead className="bg-[#111315] text-left text-xs uppercase text-[#ffd900]"><tr><th className="p-4">Nome</th><th className="p-4">E-mail</th><th className="p-4">Função</th><th className="p-4">Status</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-black/10"><td className="p-4 font-black">{user.name}</td><td className="p-4">{user.email}</td><td className="p-4">{user.role}</td><td className="p-4"><button onClick={() => setUsers((current) => current.map((item) => item.id === user.id ? { ...item, active: !item.active } : item))} className={`px-2 py-1 text-xs font-black uppercase ${user.active ? "bg-[#ffd900]" : "bg-black/10"}`}>{user.active ? "Ativo" : "Inativo"}</button></td></tr>)}</tbody></table></div>{open && <Modal title="Novo usuário" onClose={() => setOpen(false)}><form onSubmit={add} className="grid gap-4"><AdminField name="name" label="Nome" required/><AdminField name="email" label="E-mail" type="email" required/><label><span className="field-label">Função</span><select name="role" className="field mt-2"><option>Funcionário</option><option>Promoções</option><option>Administrador</option></select></label><button className="admin-primary justify-center">Adicionar usuário</button></form></Modal>}</AdminPage>;
+  const [users, setUsers] = useState<TeamUser[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => { void loadUsers(); }, []);
+  async function loadUsers() {
+    const { data, error: queryError } = await supabase
+      .from("profiles").select("id,full_name,email,role,active").order("full_name");
+    if (queryError) { setError(queryError.message); return; }
+    setUsers((data || []).map((profile) => ({
+      id: profile.id,
+      name: profile.full_name || "Sem nome",
+      email: profile.email || "E-mail não disponível",
+      role: profile.role,
+      active: profile.active,
+    })));
+  }
+  async function updateUser(id: string, values: Partial<Pick<TeamUser, "role" | "active">>) {
+    const { error: updateError } = await supabase.from("profiles").update(values).eq("id", id);
+    if (updateError) setError(updateError.message);
+    else await loadUsers();
+  }
+  return <AdminPage title="Usuários" subtitle="Contas, funções e acesso ao painel">
+    {error && <p className="mb-5 border-2 border-red-600 bg-red-50 p-4 font-bold text-red-700">Erro: {error}</p>}
+    <div className="overflow-x-auto border-2 border-[#111315] bg-white"><table className="w-full min-w-[760px]"><thead className="bg-[#111315] text-left text-xs uppercase text-[#ffd900]"><tr><th className="p-4">Nome</th><th className="p-4">E-mail</th><th className="p-4">Função</th><th className="p-4">Status</th></tr></thead><tbody>{users.map((user) => <tr key={user.id} className="border-b border-black/10"><td className="p-4 font-black">{user.name}</td><td className="p-4">{user.email}</td><td className="p-4"><select value={user.role} onChange={(event) => void updateUser(user.id, { role: event.target.value })} className="border-2 border-[#111315] bg-white p-2 font-bold"><option value="customer">Cliente</option><option value="employee">Funcionário</option><option value="manager">Gerente</option><option value="cashier">Caixa</option><option value="admin">Administrador</option></select></td><td className="p-4"><button onClick={() => void updateUser(user.id, { active: !user.active })} className={`px-3 py-2 text-xs font-black uppercase ${user.active ? "bg-[#ffd900]" : "bg-black/10"}`}>{user.active ? "Ativo" : "Bloqueado"}</button></td></tr>)}</tbody></table></div>
+  </AdminPage>;
 }
 
 export function SettingsPage() {

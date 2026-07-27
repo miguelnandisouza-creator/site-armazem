@@ -25,10 +25,10 @@ export async function proxy(request: NextRequest) {
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role,active")
     .eq("id", user.id)
     .single();
-  if (!profile || !["admin", "manager", "employee"].includes(profile.role)) {
+  if (!profile?.active || !["admin", "manager", "employee"].includes(profile.role)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
   return response;

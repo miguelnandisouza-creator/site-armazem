@@ -19,6 +19,17 @@ type ImportedProduct = {
   image: string;
 };
 
+const verifiedProducts: Record<string, ImportedProduct> = {
+  "7791293035857": {
+    barcode: "7791293035857",
+    name: "Desodorante Antitranspirante Rexona Men Active Dry",
+    brand: "Rexona",
+    category: "Higiene",
+    unit: "200 ml",
+    image: "",
+  },
+};
+
 let importedProductsPromise: Promise<ImportedProduct[]> | undefined;
 
 export async function GET(
@@ -31,7 +42,9 @@ export async function GET(
   }
 
   const importedProducts = await loadImportedProducts();
-  const localProduct = importedProducts.find((product) => product.barcode === barcode);
+  const localProduct =
+    importedProducts.find((product) => product.barcode === barcode) ??
+    verifiedProducts[barcode];
   if (localProduct) {
     return Response.json({
       found: true,

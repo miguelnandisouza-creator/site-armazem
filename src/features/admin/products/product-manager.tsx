@@ -204,19 +204,46 @@ function BarcodeScanner({ onDetected, onClose }: { onDetected: (code: string) =>
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const [error, setError] = useState("");
+  const [torchAvailable, setTorchAvailable] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
   useEffect(() => {
     let active = true;
     const reader = new BrowserMultiFormatReader();
-    reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
+    reader.decodeFromConstraints({
+      audio: false,
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+    }, videoRef.current!, (result) => {
       if (result && active) {
         active = false;
         controlsRef.current?.stop();
         onDetected(result.getText());
       }
-    }).then((controls) => { controlsRef.current = controls; }).catch(() => setError("Não foi possível abrir a câmera. Verifique a permissão do navegador."));
+    }).then((controls) => {
+      controlsRef.current = controls;
+      setTorchAvailable(Boolean(controls.switchTorch));
+    }).catch(() => setError("Não foi possível abrir a câmera traseira. Verifique a permissão do navegador."));
     return () => { active = false; controlsRef.current?.stop(); };
   }, [onDetected]);
-  return <div className="fixed inset-0 z-[60] grid place-items-center bg-black p-4"><section className="w-full max-w-xl text-white"><div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-black uppercase text-[#ffd900]">Leitor de código</p><h2 className="text-2xl">Aponte para o código de barras</h2></div><button onClick={onClose} className="grid h-11 w-11 place-items-center border border-white/30"><X /></button></div><div className="relative overflow-hidden border-4 border-[#ffd900] bg-black"><video ref={videoRef} className="aspect-[4/3] w-full object-cover" muted playsInline /><div className="pointer-events-none absolute inset-x-[8%] top-1/2 h-0.5 bg-red-500 shadow-[0_0_12px_red]" /></div>{error && <p className="mt-4 bg-red-600 p-3 font-bold">{error}</p>}<p className="mt-4 text-center text-sm text-white/65">Mantenha o código inteiro dentro da imagem.</p></section></div>;
+  async function toggleTorch() {
+    if (!controlsRef.current?.switchTorch) return;
+    try {
+      await controlsRef.current.switchTorch(!torchOn);
+      setTorchOn((current) => !current);
+    } catch {
+      setTorchAvailable(false);
+    }
+  }
+  function submitManual(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const code = String(new FormData(event.currentTarget).get("manualBarcode")).replace(/\D/g, "");
+    if (/^\d{8,14}$/.test(code)) onDetected(code);
+    else setError("Digite um código com 8 a 14 números.");
+  }
+  return <div className="fixed inset-0 z-[60] overflow-y-auto bg-black p-4"><section className="mx-auto my-4 w-full max-w-xl text-white"><div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-black uppercase text-[#ffd900]">Câmera traseira</p><h2 className="text-2xl">Aponte para o código</h2></div><button onClick={onClose} className="grid h-11 w-11 place-items-center border border-white/30"><X /></button></div><div className="relative overflow-hidden border-4 border-[#ffd900] bg-black"><video ref={videoRef} className="aspect-[3/4] w-full object-cover sm:aspect-[4/3]" muted playsInline autoPlay /><div className="pointer-events-none absolute inset-x-[6%] top-1/2 h-24 -translate-y-1/2 border-2 border-[#ffd900]"><div className="absolute inset-x-0 top-1/2 h-0.5 bg-red-500 shadow-[0_0_12px_red]" /></div></div><div className="mt-3 flex items-center justify-between gap-3"><p className="text-sm text-white/65">Mantenha as barras inteiras dentro do retângulo.</p>{torchAvailable && <button onClick={toggleTorch} className="shrink-0 border border-[#ffd900] px-3 py-2 text-xs font-black uppercase text-[#ffd900]">{torchOn ? "Apagar luz" : "Acender luz"}</button>}</div>{error && <p className="mt-4 bg-red-600 p-3 font-bold">{error}</p>}<div className="my-5 flex items-center gap-3 text-xs font-black uppercase text-white/35"><span className="h-px flex-1 bg-white/20"/>ou digite o código<span className="h-px flex-1 bg-white/20"/></div><form onSubmit={submitManual} className="flex gap-2"><input name="manualBarcode" required inputMode="numeric" maxLength={14} className="h-12 min-w-0 flex-1 border-2 border-[#ffd900] bg-white px-3 font-mono text-[#111315] outline-none" placeholder="Código de barras"/><button className="bg-[#ffd900] px-4 text-sm font-black uppercase text-[#111315]">Buscar</button></form></section></div>;
 }
 
 const formatPrice = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, LockKeyhole, Mail, UserPlus, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserPlus, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,7 +88,7 @@ export default function LoginPage() {
           <form onSubmit={submit} className="mt-7 space-y-4">
             {mode === "signup" && <label className="block text-sm font-bold">Nome<div className="mt-2 flex items-center gap-3 border-2 border-[#111315] px-3"><UserRound size={18}/><input required name="name" className="h-12 w-full outline-none" placeholder="Seu nome"/></div></label>}
             <label className="block text-sm font-bold">E-mail<div className="mt-2 flex items-center gap-3 border-2 border-[#111315] px-3"><Mail size={18}/><input required name="email" type="email" className="h-12 w-full outline-none" placeholder="seu@email.com"/></div></label>
-            <label className="block text-sm font-bold">Senha<div className="mt-2 flex items-center gap-3 border-2 border-[#111315] px-3"><LockKeyhole size={18}/><input required minLength={6} name="password" type="password" className="h-12 w-full outline-none" placeholder="Mínimo de 6 caracteres"/></div></label>
+            <label className="block text-sm font-bold">Senha<div className="mt-2 flex items-center gap-3 border-2 border-[#111315] px-3"><LockKeyhole size={18}/><input required minLength={6} name="password" type={showPassword ? "text" : "password"} className="h-12 min-w-0 flex-1 outline-none" placeholder="Mínimo de 6 caracteres"/><button type="button" onClick={() => setShowPassword((current) => !current)} className="grid h-10 w-10 shrink-0 place-items-center text-black/60 hover:text-black" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} title={showPassword ? "Ocultar senha" : "Mostrar senha"}>{showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}</button></div></label>
             {error && <p className="bg-red-100 p-3 text-sm font-bold text-red-700">{error}</p>}
             {message && <p className="bg-green-100 p-3 text-sm font-bold text-green-700">{message}</p>}
             <button disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 bg-[#ffd900] text-sm font-black uppercase disabled:opacity-60">{loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}<ArrowRight size={18}/></button>

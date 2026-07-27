@@ -4,6 +4,7 @@ import {
   Boxes, LayoutDashboard, Menu, Settings, Tags, Users, X,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
@@ -35,7 +36,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 }
 
 function Brand({ compact = false }: { compact?: boolean }) {
-  return <Link href="/admin" className="flex items-center gap-2"><span className="grid h-10 w-10 -rotate-3 place-items-center bg-[#ffd900] font-black text-[#111315]">A</span><span className={`${compact ? "text-xs" : "text-sm"} font-black uppercase leading-4`}>Armazém<br/><b className="text-[#ffd900]">Admin</b></span></Link>;
+  return <Link href="/admin" className="flex items-center gap-2"><span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-[#ffd900]"><Image src="/images/logo.png" alt="Logo Armazém Parada Obrigatória" fill priority className="object-cover" sizes="44px" /></span><span className={`${compact ? "text-xs" : "text-sm"} font-black uppercase leading-4`}>Armazém<br/><b className="text-[#ffd900]">Admin</b></span></Link>;
 }
 
 function AdminNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {

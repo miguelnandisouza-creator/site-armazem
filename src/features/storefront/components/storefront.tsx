@@ -76,7 +76,7 @@ export function Storefront() {
       <header className="sticky top-0 z-40 border-b-4 border-[#ffd900] bg-[#111315]/95 text-white backdrop-blur-xl">
         <div className="mx-auto flex h-17 max-w-[1380px] items-center gap-5 px-4 sm:px-6 lg:px-10">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
-            <span className="grid h-9 w-9 rotate-[-3deg] place-items-center bg-[#ffd900] text-base font-black text-[#111315]">A</span>
+            <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-[#ffd900]"><Image src="/images/logo.png" alt="Logo Armazém Parada Obrigatória" fill priority className="object-cover" sizes="44px" /></span>
             <span className="hidden text-[14px] font-extrabold uppercase leading-[1.05] sm:block">Armazém<br /><b className="text-[#ffd900]">Parada Obrigatória</b></span>
           </Link>
           <nav className="ml-4 hidden items-center gap-6 text-sm font-semibold lg:flex">

@@ -1,0 +1,3 @@
+import { z } from "zod";
+export const productSchema = z.object({ name: z.string().trim().min(2).max(160), brand: z.string().trim().max(100).optional(), ean: z.string().regex(/^\d{8,14}$/).optional(), categoryId: z.string().uuid().optional(), priceCents: z.coerce.number().int().nonnegative(), salePriceCents: z.coerce.number().int().nonnegative().optional(), description: z.string().trim().max(2000).optional() }).refine(({priceCents,salePriceCents}) => !salePriceCents || salePriceCents <= priceCents, { message: "O preço promocional deve ser menor ou igual ao preço normal", path: ["salePriceCents"] });
+export type ProductInput = z.infer<typeof productSchema>;

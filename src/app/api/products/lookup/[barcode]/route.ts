@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-type OpenFoodFactsProduct = {
+type ExternalProduct = {
   product_name_pt?: string;
   product_name?: string;
   brands?: string;
@@ -47,40 +47,28 @@ export async function GET(
     });
   }
 
-  const fields = "product_name_pt,product_name,brands,quantity,image_front_url,categories_tags";
-  try {
-    const response = await fetch(
-      `https://world.openfoodfacts.org/api/v3/product/${barcode}.json?fields=${fields}`,
-      {
-        headers: { "User-Agent": "ArmazemParadaObrigatoria/0.1 (cadastro-local)" },
-        signal: AbortSignal.timeout(8000),
-      },
-    );
-    if (!response.ok) {
-      return Response.json({ found: false });
-    }
-
-    const data = await response.json() as { product?: OpenFoodFactsProduct };
-    if (!data.product) return Response.json({ found: false });
-
-    const product = data.product;
+  const sources = [
+    { domain: "world.openfoodfacts.org", category: "" },
+    { domain: "world.openbeautyfacts.org", category: "Higiene" },
+    { domain: "world.openproductsfacts.org", category: "" },
+  ];
+  for (const source of sources) {
+    const product = await lookupExternalProduct(source.domain, barcode);
+    if (!product) continue;
     return Response.json({
       found: true,
+      source: source.domain,
       product: {
         barcode,
         name: product.product_name_pt || product.product_name || "",
         brand: product.brands?.split(",")[0]?.trim() || "",
         unit: product.quantity || "",
         image: product.image_front_url || "",
-        suggestedCategory: inferCategory(product.categories_tags || []),
+        suggestedCategory: source.category || inferCategory(product.categories_tags || []),
       },
     });
-  } catch {
-    return Response.json(
-      { error: "Não foi possível consultar o produto agora." },
-      { status: 502 },
-    );
   }
+  return Response.json({ found: false });
 }
 
 function loadImportedProducts() {
@@ -89,6 +77,24 @@ function loadImportedProducts() {
     "utf8",
   ).then((content) => JSON.parse(content) as ImportedProduct[]);
   return importedProductsPromise;
+}
+
+async function lookupExternalProduct(domain: string, barcode: string) {
+  const fields = "product_name_pt,product_name,brands,quantity,image_front_url,categories_tags";
+  try {
+    const response = await fetch(
+      `https://${domain}/api/v3/product/${barcode}.json?fields=${fields}`,
+      {
+        headers: { "User-Agent": "ArmazemParadaObrigatoria/0.1 (cadastro-produtos)" },
+        signal: AbortSignal.timeout(8000),
+      },
+    );
+    if (!response.ok) return null;
+    const data = await response.json() as { product?: ExternalProduct };
+    return data.product || null;
+  } catch {
+    return null;
+  }
 }
 
 function inferCategory(tags: string[]) {

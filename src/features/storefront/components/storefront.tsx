@@ -11,17 +11,14 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { categories, formatPrice, products as demoProducts, type CatalogProduct } from "../data/catalog";
 import type { LocalProduct } from "@/features/admin/products/types";
-import { createClient } from "@/lib/supabase/client";
 
 const categoryIcons = { leaf: Leaf, croissant: Croissant, package: Package, bottle: Store, sandwich: ShoppingBasket, sparkles: Sparkles };
 const ACTIVATE_ALL_MIGRATION = "armazem:migration:activate-all-v1";
-const supabase = createClient();
 
 export function Storefront() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Mercearia");
   const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
-  const [offers, setOffers] = useState<CatalogProduct[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(24);
   const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>({});
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -36,36 +33,6 @@ export function Storefront() {
       setHydrated(true);
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
-  useEffect(() => {
-    const now = new Date().toISOString();
-    supabase
-      .from("promotions")
-      .select("id,promotional_price_cents,products(id,ean,name,brand,unit,image_url,price_cents,stock,categories(name))")
-      .lte("starts_at", now)
-      .gte("ends_at", now)
-      .then(({ data }) => {
-        const activeOffers = (data || []).flatMap((promotion) => {
-          const product = Array.isArray(promotion.products) ? promotion.products[0] : promotion.products;
-          if (!product) return [];
-          const relation = Array.isArray(product.categories) ? product.categories[0] : product.categories;
-          return [{
-            id: hashBarcode(product.ean || product.id),
-            barcode: product.ean || "",
-            name: product.name,
-            brand: product.brand || "",
-            category: relation?.name || "Mercearia",
-            unit: product.unit || "",
-            price: promotion.promotional_price_cents / 100,
-            previousPrice: product.price_cents / 100,
-            image: product.image_url || "",
-            accent: "#fff1a8",
-            tag: "Oferta",
-            stock: product.stock,
-          }];
-        });
-        setOffers(activeOffers);
-      });
   }, []);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -113,7 +80,7 @@ export function Storefront() {
             <span className="hidden text-[14px] font-extrabold uppercase leading-[1.05] sm:block">Armazém<br /><b className="text-[#ffd900]">Parada Obrigatória</b></span>
           </Link>
           <nav className="ml-4 hidden items-center gap-6 text-sm font-semibold lg:flex">
-            <a href="#ofertas">Ofertas</a><a href="#categorias">Categorias</a><a href="#mercado">O mercado</a>
+            <Link href="/ofertas">Ofertas</Link><a href="#categorias">Categorias</a><a href="#mercado">O mercado</a>
           </nav>
           <label className="mx-auto hidden h-11 max-w-xl flex-1 items-center gap-3 border-2 border-[#ffd900] bg-white px-4 text-[#111315] md:flex">
             <Search size={18} />
@@ -142,7 +109,7 @@ export function Storefront() {
             <h1 className="max-w-xl text-4xl font-black uppercase leading-[.92] tracking-[-.04em] sm:text-6xl lg:text-7xl">Preço baixo é parada obrigatória.</h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-white/78 sm:text-lg">Qualidade de perto, preço justo e uma lista inteligente para você ganhar tempo todos os dias.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#ofertas" className="inline-flex h-12 items-center gap-2 border-2 border-[#ffd900] bg-[#ffd900] px-5 text-sm font-black uppercase text-[#111315]">Ver ofertas <ArrowRight size={17} /></a>
+              <Link href="/ofertas" className="inline-flex h-12 items-center gap-2 border-2 border-[#ffd900] bg-[#ffd900] px-5 text-sm font-black uppercase text-[#111315]">Ver ofertas <ArrowRight size={17} /></Link>
               <button onClick={() => setDrawer(true)} className="h-12 border border-white/35 bg-white/8 px-5 text-sm font-bold backdrop-blur">Abrir minha lista</button>
             </div>
           </div>
@@ -150,15 +117,6 @@ export function Storefront() {
             <span className="grid h-10 w-10 place-items-center bg-[#111315] text-[#ffd900]"><Clock3 size={20} /></span>
             <div><p className="text-xs text-[#637067]">Hoje</p><p className="text-sm font-extrabold">Aberto até as 21h</p></div>
           </div>
-        </div>
-      </section>
-
-      <section id="ofertas" className="border-y-4 border-[#111315] bg-[#ffd900] py-14 lg:py-20">
-        <div className="mx-auto max-w-[1380px] px-4 sm:px-6 lg:px-10">
-          <div className="mb-7"><p className="eyebrow">Preço bom de verdade</p><h2>Ofertas para aproveitar</h2><p className="mt-2 text-sm font-bold text-[#111315]/65">Somente promoções ativas por tempo limitado</p></div>
-          {offers.length ? <motion.div layout className="grid grid-cols-2 gap-x-3 gap-y-8 lg:grid-cols-3 xl:grid-cols-4">
-            {offers.map((product) => <ProductCard key={product.id} product={product} favorite={favorites.includes(product.id)} listed={list.includes(product.id)} onFavorite={() => toggle(product.id, setFavorites)} onList={() => toggle(product.id, setList)} />)}
-          </motion.div> : <div className="grid min-h-52 place-items-center border-2 border-dashed border-[#111315]/30 bg-white/35 p-8 text-center"><div><Sparkles className="mx-auto" /><p className="mt-4 font-black uppercase">Nenhuma oferta disponível no momento</p><p className="mt-2 text-sm">Confira os produtos pelas categorias abaixo.</p></div></div>}
         </div>
       </section>
 

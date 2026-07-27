@@ -43,7 +43,7 @@ export default function LoginPage() {
       return;
     }
 
-    if (email === "admin@admin1234") {
+    if (email === "miguelnandisouza@gmail.com") {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
         setError("E-mail ou senha inválidos.");

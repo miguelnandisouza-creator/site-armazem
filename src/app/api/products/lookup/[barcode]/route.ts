@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 type OpenFoodFactsProduct = {
   product_name_pt?: string;
   product_name?: string;
@@ -7,6 +10,17 @@ type OpenFoodFactsProduct = {
   categories_tags?: string[];
 };
 
+type ImportedProduct = {
+  barcode: string;
+  name: string;
+  brand: string;
+  category: string;
+  unit: string;
+  image: string;
+};
+
+let importedProductsPromise: Promise<ImportedProduct[]> | undefined;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ barcode: string }> },
@@ -14,6 +28,23 @@ export async function GET(
   const { barcode } = await params;
   if (!/^\d{8,14}$/.test(barcode)) {
     return Response.json({ error: "Código de barras inválido." }, { status: 400 });
+  }
+
+  const importedProducts = await loadImportedProducts();
+  const localProduct = importedProducts.find((product) => product.barcode === barcode);
+  if (localProduct) {
+    return Response.json({
+      found: true,
+      source: "store",
+      product: {
+        barcode,
+        name: localProduct.name,
+        brand: localProduct.brand,
+        unit: localProduct.unit,
+        image: localProduct.image,
+        suggestedCategory: localProduct.category,
+      },
+    });
   }
 
   const fields = "product_name_pt,product_name,brands,quantity,image_front_url,categories_tags";
@@ -50,6 +81,14 @@ export async function GET(
       { status: 502 },
     );
   }
+}
+
+function loadImportedProducts() {
+  importedProductsPromise ??= readFile(
+    path.join(process.cwd(), "public", "data", "imported-products.json"),
+    "utf8",
+  ).then((content) => JSON.parse(content) as ImportedProduct[]);
+  return importedProductsPromise;
 }
 
 function inferCategory(tags: string[]) {

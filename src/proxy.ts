@@ -23,6 +23,14 @@ export async function proxy(request: NextRequest) {
   );
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profile || !["admin", "manager", "employee"].includes(profile.role)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
   return response;
 }
 

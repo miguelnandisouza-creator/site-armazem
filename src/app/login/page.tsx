@@ -44,14 +44,15 @@ export default function LoginPage() {
       return;
     }
 
-    if (email === "miguelnandisouza@gmail.com") {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError) {
-        setError("E-mail ou senha inválidos.");
-        setLoading(false);
-        return;
-      }
-      router.replace("/admin");
+    const { data: authData } = await supabase.auth.signInWithPassword({ email, password });
+    if (authData.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", authData.user.id)
+        .single();
+      const isStaff = profile && ["admin", "manager", "employee"].includes(profile.role);
+      router.replace(isStaff ? "/admin" : "/");
       router.refresh();
       return;
     }

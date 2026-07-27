@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type CustomerAccount = { name: string; email: string; passwordHash: string };
 const ACCOUNTS_KEY = "armazem:customer-accounts";
@@ -12,6 +13,7 @@ const SESSION_KEY = "armazem:customer-session";
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -42,12 +44,8 @@ export default function LoginPage() {
     }
 
     if (email === "admin@admin1234") {
-      const response = await fetch("/api/local-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!response.ok) {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
         setError("E-mail ou senha inválidos.");
         setLoading(false);
         return;

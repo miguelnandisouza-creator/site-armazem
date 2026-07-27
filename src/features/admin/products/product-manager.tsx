@@ -8,11 +8,13 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { emptyProduct, type LocalProduct, type ProductDraft } from "./types";
 
 const STORAGE_KEY = "armazem:admin-products";
 const ACTIVATE_ALL_MIGRATION = "armazem:migration:activate-all-v1";
 const categories = ["Mercearia", "Bebidas", "Frios", "Padaria", "Hortifruti", "Limpeza", "Higiene"];
+const supabase = createClient();
 
 export function ProductManager() {
   const [products, setProducts] = useState<LocalProduct[]>([]);
@@ -41,7 +43,30 @@ export function ProductManager() {
           localProducts
             .filter((product) => !product.id.startsWith("import-"))
             .forEach((product) => merged.set(product.barcode, product));
-          setProducts([...merged.values()]);
+          return supabase
+            .from("products")
+            .select("id,ean,name,brand,unit,image_url,price_cents,stock,status,created_at,categories(name)")
+            .then(({ data, error }) => {
+              if (error) throw error;
+              (data || []).forEach((row) => {
+                const relation = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+                if (!row.ean) return;
+                merged.set(row.ean, {
+                  id: row.id,
+                  barcode: row.ean,
+                  name: row.name,
+                  brand: row.brand || "",
+                  category: relation?.name || "Mercearia",
+                  unit: row.unit || "",
+                  image: row.image_url || "",
+                  price: row.price_cents / 100,
+                  stock: row.stock,
+                  active: row.status === "active",
+                  createdAt: row.created_at,
+                });
+              });
+              setProducts([...merged.values()]);
+            });
         })
         .catch(() => setProducts(localProducts))
         .finally(() => setHydrated(true));
@@ -109,8 +134,50 @@ export function ProductManager() {
     }
   }
 
-  function save(event: FormEvent) {
+  async function saveProductToSupabase(values: ProductDraft, currentId: string | null) {
+    setLookupMessage("Salvando no Supabase...");
+    const { data: store, error: storeError } = await supabase
+      .from("stores").select("id").eq("slug", "armazem-parada-obrigatoria").single();
+    if (storeError) {
+      setLookupMessage(`Erro ao localizar o mercado: ${storeError.message}`);
+      return false;
+    }
+    const slug = values.category.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const { data: category, error: categoryError } = await supabase
+      .from("categories")
+      .upsert({ store_id: store.id, name: values.category, slug }, { onConflict: "store_id,slug" })
+      .select("id").single();
+    if (categoryError) {
+      setLookupMessage(`Erro ao salvar categoria: ${categoryError.message}`);
+      return false;
+    }
+    const payload = {
+      store_id: store.id,
+      category_id: category.id,
+      ean: values.barcode,
+      name: values.name,
+      brand: values.brand || null,
+      unit: values.unit || null,
+      image_url: values.image || null,
+      price_cents: Math.round(values.price * 100),
+      stock: values.stock,
+      status: values.active ? "active" : "draft",
+    };
+    const result = currentId && !currentId.startsWith("import-")
+      ? await supabase.from("products").update(payload).eq("id", currentId)
+      : await supabase.from("products").upsert(payload, { onConflict: "store_id,ean" });
+    if (result.error) {
+      setLookupMessage(`Erro ao salvar produto: ${result.error.message}`);
+      return false;
+    }
+    return true;
+  }
+
+  async function save(event: FormEvent) {
     event.preventDefault();
+    const synced = await saveProductToSupabase(draft, editingId);
+    if (!synced) return;
     if (products.some((item) => item.barcode === draft.barcode && item.id !== editingId)) {
       setLookupMessage("Já existe um produto com esse código de barras.");
       return;

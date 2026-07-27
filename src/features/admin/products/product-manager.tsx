@@ -11,8 +11,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { emptyProduct, type LocalProduct, type ProductDraft } from "./types";
 
-const STORAGE_KEY = "armazem:admin-products";
-const ACTIVATE_ALL_MIGRATION = "armazem:migration:activate-all-v1";
 const categories = ["Mercearia", "Bebidas", "Frios", "Padaria", "Hortifruti", "Limpeza", "Higiene"];
 const supabase = createClient();
 
@@ -25,24 +23,12 @@ export function ProductManager() {
   const [query, setQuery] = useState("");
   const [lookupMessage, setLookupMessage] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      let localProducts: LocalProduct[] = saved ? JSON.parse(saved) : [];
-      if (!localStorage.getItem(ACTIVATE_ALL_MIGRATION)) {
-        localProducts = localProducts.map((product) => ({ ...product, active: true }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(localProducts));
-        localStorage.setItem(ACTIVATE_ALL_MIGRATION, "done");
-      }
       fetch("/data/imported-products.json")
         .then((response) => response.json())
         .then((importedProducts: LocalProduct[]) => {
           const merged = new Map(importedProducts.map((product) => [product.barcode, product]));
-          localProducts
-            .filter((product) => !product.id.startsWith("import-"))
-            .forEach((product) => merged.set(product.barcode, product));
           return supabase
             .from("products")
             .select("id,ean,name,brand,unit,image_url,price_cents,stock,status,created_at,categories(name)")
@@ -68,15 +54,10 @@ export function ProductManager() {
               setProducts([...merged.values()]);
             });
         })
-        .catch(() => setProducts(localProducts))
-        .finally(() => setHydrated(true));
+        .catch(() => setProducts([]));
     });
     return () => cancelAnimationFrame(frame);
   }, []);
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-  }, [products, hydrated]);
-
   const filtered = useMemo(() => {
     const term = query.toLocaleLowerCase("pt-BR");
     return products.filter((product) =>

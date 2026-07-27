@@ -11,8 +11,6 @@ import { createClient } from "@/lib/supabase/client";
 
 type Promotion = { id: string; productId: string; productName: string; normalPrice: number; promotionalPrice: number; startsAt: string; endsAt: string; active: boolean };
 type TeamUser = { id: string; name: string; email: string; role: string; active: boolean };
-const PROMOTIONS_KEY = "armazem:promotions";
-const USERS_KEY = "armazem:team-users";
 const supabase = createClient();
 
 export function AdminDashboard() {
@@ -20,11 +18,11 @@ export function AdminDashboard() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [users, setUsers] = useState<TeamUser[]>([]);
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      setPromotions(JSON.parse(localStorage.getItem(PROMOTIONS_KEY) || "[]"));
-      setUsers(JSON.parse(localStorage.getItem(USERS_KEY) || "[]"));
-    });
-    return () => cancelAnimationFrame(frame);
+    supabase.from("promotions").select("id,product_id,promotional_price_cents,starts_at,ends_at,products(name,price_cents)").then(({ data }) => setPromotions((data || []).flatMap((row) => {
+      const product = Array.isArray(row.products) ? row.products[0] : row.products;
+      return product ? [{ id: row.id, productId: row.product_id, productName: product.name, normalPrice: product.price_cents / 100, promotionalPrice: row.promotional_price_cents / 100, startsAt: row.starts_at, endsAt: row.ends_at, active: true }] : [];
+    })));
+    supabase.from("profiles").select("id,full_name,email,role,active").then(({ data }) => setUsers((data || []).map((row) => ({ id: row.id, name: row.full_name || "", email: row.email || "", role: row.role, active: row.active }))));
   }, []);
   const now = new Date();
   const activePromotions = promotions.filter((item) => item.active && new Date(item.startsAt) <= now && new Date(item.endsAt) >= now).length;
@@ -78,11 +76,23 @@ export function PromotionsPage() {
 }
 
 export function CategoriesPage() {
-  const defaults = ["Mercearia", "Bebidas", "Frios", "Padaria", "Hortifruti", "Limpeza", "Higiene"];
   const products = useAdminProducts();
-  const [categories, setCategories] = usePersistentList<string>("armazem:categories", defaults);
-  function add(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = event.currentTarget; const value = String(new FormData(form).get("name")).trim(); if (value && !categories.includes(value)) setCategories((current) => [...current, value]); form.reset(); }
-  return <AdminPage title="Categorias" subtitle="Organize os corredores da vitrine"><form onSubmit={add} className="mb-6 flex gap-2"><input required name="name" className="field max-w-md" placeholder="Nova categoria"/><button className="admin-primary">Adicionar</button></form><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{categories.map((category) => <article key={category} className="flex items-center justify-between border-2 border-[#111315] bg-white p-5"><div><p className="font-black uppercase">{category}</p><p className="text-xs text-black/50">{products.filter((item) => item.category === category).length} produtos</p></div><button disabled={defaults.includes(category)} onClick={() => setCategories((current) => current.filter((item) => item !== category))} className="admin-icon text-red-600 disabled:opacity-20"><Trash2 size={17}/></button></article>)}</div></AdminPage>;
+  const [categoryRows, setCategoryRows] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => { void loadCategories(); }, []);
+  async function loadCategories() {
+    const { data } = await supabase.from("categories").select("id,name").order("name");
+    setCategoryRows(data || []);
+  }
+  async function add(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const form = event.currentTarget;
+    const name = String(new FormData(form).get("name")).trim();
+    const slug = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const { data: store } = await supabase.from("stores").select("id").eq("slug", "armazem-parada-obrigatoria").single();
+    if (store && name) await supabase.from("categories").upsert({ store_id: store.id, name, slug }, { onConflict: "store_id,slug" });
+    form.reset(); await loadCategories();
+  }
+  async function remove(id: string) { await supabase.from("categories").delete().eq("id", id); await loadCategories(); }
+  return <AdminPage title="Categorias" subtitle="Categorias sincronizadas pelo Supabase"><form onSubmit={add} className="mb-6 flex gap-2"><input required name="name" className="field max-w-md" placeholder="Nova categoria"/><button className="admin-primary">Adicionar</button></form><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{categoryRows.map((category) => <article key={category.id} className="flex items-center justify-between border-2 border-[#111315] bg-white p-5"><div><p className="font-black uppercase">{category.name}</p><p className="text-xs text-black/50">{products.filter((item) => item.category === category.name).length} produtos</p></div><button onClick={() => void remove(category.id)} className="admin-icon text-red-600"><Trash2 size={17}/></button></article>)}</div></AdminPage>;
 }
 
 export function UsersPage() {
@@ -114,8 +124,28 @@ export function UsersPage() {
 
 export function SettingsPage() {
   const [saved, setSaved] = useState(false);
-  function save(event: FormEvent<HTMLFormElement>) { event.preventDefault(); localStorage.setItem("armazem:settings", JSON.stringify(Object.fromEntries(new FormData(event.currentTarget)))); setSaved(true); }
-  return <AdminPage title="Configurações" subtitle="Informações usadas pela loja"><form onSubmit={save} className="grid max-w-2xl gap-5 border-2 border-[#111315] bg-white p-6 shadow-[5px_5px_0_#d6ad00]"><AdminField name="storeName" label="Nome do mercado" defaultValue="Armazém Parada Obrigatória"/><AdminField name="whatsapp" label="WhatsApp" defaultValue="48999627339"/><AdminField name="address" label="Endereço"/><div className="grid gap-4 sm:grid-cols-2"><AdminField name="openTime" label="Abertura" type="time" defaultValue="08:00"/><AdminField name="closeTime" label="Fechamento" type="time" defaultValue="21:00"/></div><button className="admin-primary justify-center"><Save size={18}/>Salvar configurações</button>{saved && <p className="bg-green-100 p-3 text-sm font-bold">Configurações salvas localmente.</p>}</form></AdminPage>;
+  const [settings, setSettings] = useState({ storeName: "", whatsapp: "", address: "", openTime: "08:00", closeTime: "21:00" });
+  const [error, setError] = useState("");
+  useEffect(() => {
+    supabase.from("stores").select("name,whatsapp,address,open_time,close_time").eq("slug", "armazem-parada-obrigatoria").single()
+      .then(({ data, error: queryError }) => {
+        if (queryError) { setError(queryError.message); return; }
+        setSettings({ storeName: data.name, whatsapp: data.whatsapp || "", address: data.address || "", openTime: String(data.open_time).slice(0, 5), closeTime: String(data.close_time).slice(0, 5) });
+      });
+  }, []);
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaved(false); setError("");
+    const data = new FormData(event.currentTarget);
+    const { error: updateError } = await supabase.from("stores").update({
+      name: String(data.get("storeName")), whatsapp: String(data.get("whatsapp")),
+      address: String(data.get("address")), open_time: String(data.get("openTime")),
+      close_time: String(data.get("closeTime")),
+    }).eq("slug", "armazem-parada-obrigatoria");
+    if (updateError) setError(updateError.message); else setSaved(true);
+  }
+  const change = (key: keyof typeof settings, value: string) => setSettings((current) => ({ ...current, [key]: value }));
+  return <AdminPage title="Configurações" subtitle="Informações sincronizadas pelo Supabase"><form onSubmit={save} className="grid max-w-2xl gap-5 border-2 border-[#111315] bg-white p-6 shadow-[5px_5px_0_#d6ad00]"><ControlledAdminField name="storeName" label="Nome do mercado" value={settings.storeName} onChange={(value) => change("storeName", value)}/><ControlledAdminField name="whatsapp" label="WhatsApp" value={settings.whatsapp} onChange={(value) => change("whatsapp", value)}/><ControlledAdminField name="address" label="Endereço" value={settings.address} onChange={(value) => change("address", value)}/><div className="grid gap-4 sm:grid-cols-2"><ControlledAdminField name="openTime" label="Abertura" type="time" value={settings.openTime} onChange={(value) => change("openTime", value)}/><ControlledAdminField name="closeTime" label="Fechamento" type="time" value={settings.closeTime} onChange={(value) => change("closeTime", value)}/></div><button className="admin-primary justify-center"><Save size={18}/>Salvar configurações</button>{saved && <p className="bg-green-100 p-3 text-sm font-bold">Configurações salvas no Supabase.</p>}{error && <p className="bg-red-100 p-3 text-sm font-bold text-red-700">Erro: {error}</p>}</form></AdminPage>;
 }
 
 function AdminPage({ title, subtitle, action, children }: { title: string; subtitle: string; action?: React.ReactNode; children: React.ReactNode }) { return <main className="min-h-screen p-4 sm:p-7 xl:p-10"><header className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-xs font-black uppercase tracking-[.16em] text-[#a08100]">Painel administrativo</p><h1 className="mt-1 text-3xl font-black uppercase sm:text-4xl">{title}</h1><p className="mt-2 text-sm text-black/55">{subtitle}</p></div>{action}</header>{children}</main>; }
@@ -125,6 +155,6 @@ function Empty({ title, text }: { title: string; text: string }) { return <div c
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-[80] overflow-y-auto bg-black/65 p-4"><div className="mx-auto my-8 max-w-xl border-2 border-[#111315] bg-[#f3f1e9] shadow-[7px_7px_0_#ffd900]"><header className="flex items-center justify-between bg-[#111315] p-5 text-white"><h2 className="text-xl">{title}</h2><button onClick={onClose} className="admin-icon border-white/25">×</button></header><div className="p-5 sm:p-7">{children}</div></div></div>; }
 function StatusBadge({ promotion }: { promotion: Promotion }) { const now = new Date(); const status = !promotion.active ? "Pausada" : new Date(promotion.startsAt) > now ? "Agendada" : new Date(promotion.endsAt) < now ? "Encerrada" : "Ativa"; return <span className="flex items-center gap-1 bg-[#ffd900] px-2 py-1 text-xs font-black uppercase"><Clock3 size={12}/>{status}</span>; }
 function AdminField({ name, label, type = "text", required, defaultValue }: { name: string; label: string; type?: string; required?: boolean; defaultValue?: string }) { return <label><span className="field-label">{label}</span><input name={name} type={type} required={required} defaultValue={defaultValue} className="field mt-2"/></label>; }
-function usePersistentList<T>(key: string, initial: T[]) { const [items, setItems] = useState<T[]>(initial); const [ready, setReady] = useState(false); useEffect(() => { const frame = requestAnimationFrame(() => { const saved = localStorage.getItem(key); if (saved) setItems(JSON.parse(saved)); setReady(true); }); return () => cancelAnimationFrame(frame); }, [key]); useEffect(() => { if (ready) localStorage.setItem(key, JSON.stringify(items)); }, [items, key, ready]); return [items, setItems] as const; }
+function ControlledAdminField({ name, label, value, onChange, type = "text" }: { name: string; label: string; value: string; onChange: (value: string) => void; type?: string }) { return <label><span className="field-label">{label}</span><input name={name} type={type} required value={value} onChange={(event) => onChange(event.target.value)} className="field mt-2"/></label>; }
 const formatPrice = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));

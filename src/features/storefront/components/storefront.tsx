@@ -11,9 +11,10 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { categories, formatPrice, products as demoProducts, type CatalogProduct } from "../data/catalog";
 import type { LocalProduct } from "@/features/admin/products/types";
+import { createClient } from "@/lib/supabase/client";
 
 const categoryIcons = { leaf: Leaf, croissant: Croissant, package: Package, bottle: Store, sandwich: ShoppingBasket, sparkles: Sparkles };
-const ACTIVATE_ALL_MIGRATION = "armazem:migration:activate-all-v1";
+const supabase = createClient();
 
 export function Storefront() {
   const [query, setQuery] = useState("");
@@ -36,22 +37,20 @@ export function Storefront() {
   }, []);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      const saved = localStorage.getItem("armazem:admin-products");
-      let localProducts: LocalProduct[] = saved ? JSON.parse(saved) : [];
-      if (!localStorage.getItem(ACTIVATE_ALL_MIGRATION)) {
-        localProducts = localProducts.map((product) => ({ ...product, active: true }));
-        localStorage.setItem("armazem:admin-products", JSON.stringify(localProducts));
-        localStorage.setItem(ACTIVATE_ALL_MIGRATION, "done");
-      }
       fetch("/data/imported-products.json")
         .then((response) => response.json())
         .then((importedProducts: LocalProduct[]) => {
           const merged = new Map(importedProducts.map((product) => [product.barcode, product]));
-          localProducts
-            .filter((product) => !product.id.startsWith("import-"))
-            .forEach((product) => merged.set(product.barcode, product));
-          const active = [...merged.values()].filter((product) => product.active);
-          setCatalogProducts(active.map(toCatalogProduct));
+          return supabase.from("products")
+            .select("id,ean,name,brand,unit,image_url,price_cents,stock,status,created_at,categories(name)")
+            .then(({ data }) => {
+              (data || []).forEach((row) => {
+                const relation = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+                if (!row.ean) return;
+                merged.set(row.ean, { id: row.id, barcode: row.ean, name: row.name, brand: row.brand || "", category: relation?.name || "Mercearia", unit: row.unit || "", image: row.image_url || "", price: row.price_cents / 100, stock: row.stock, active: row.status === "active", createdAt: row.created_at });
+              });
+              setCatalogProducts([...merged.values()].filter((product) => product.active).map(toCatalogProduct));
+            });
         })
         .catch(() => setCatalogProducts(demoProducts));
     });

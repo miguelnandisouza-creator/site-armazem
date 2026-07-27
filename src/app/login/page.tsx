@@ -7,10 +7,6 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type CustomerAccount = { name: string; email: string; passwordHash: string };
-const ACCOUNTS_KEY = "armazem:customer-accounts";
-const SESSION_KEY = "armazem:customer-session";
-
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -30,17 +26,10 @@ export default function LoginPage() {
     const password = String(data.get("password"));
 
     if (mode === "signup") {
-      const accounts: CustomerAccount[] = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "[]");
-      if (accounts.some((account) => account.email === email)) {
-        setError("Já existe uma conta com este e-mail.");
-        setLoading(false);
-        return;
-      }
-      const account = { name: String(data.get("name")).trim(), email, passwordHash: await hashPassword(password) };
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify([...accounts, account]));
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ name: account.name, email }));
-      setMessage("Conta criada! Você já está conectado.");
-      setTimeout(() => router.replace("/"), 700);
+      const { error: signupError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: String(data.get("name")).trim() } } });
+      if (signupError) setError(signupError.message);
+      else setMessage("Conta criada. Confira seu e-mail caso seja solicitada confirmação.");
+      setLoading(false);
       return;
     }
 
@@ -57,16 +46,8 @@ export default function LoginPage() {
       return;
     }
 
-    const accounts: CustomerAccount[] = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "[]");
-    const passwordHash = await hashPassword(password);
-    const account = accounts.find((item) => item.email === email && item.passwordHash === passwordHash);
-    if (!account) {
-      setError("Conta não encontrada ou senha incorreta.");
-      setLoading(false);
-      return;
-    }
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ name: account.name, email }));
-    router.replace("/");
+    setError("E-mail ou senha inválidos.");
+    setLoading(false);
   }
 
   return <main className="grid min-h-screen bg-[#111315] text-white lg:grid-cols-[.9fr_1.1fr]">
@@ -101,8 +82,3 @@ export default function LoginPage() {
   </main>;
 }
 
-async function hashPassword(password: string) {
-  const data = new TextEncoder().encode(password);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}

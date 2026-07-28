@@ -15,9 +15,10 @@ console.log(JSON.stringify(counts, null, 2));
 function classify(value) {
   const text = normalize(value);
 
-  if (!/\bamaciante de carne\b/.test(text) && matches(text, [
+  if (matches(text, [
+    /^abs[ .]/, /\bmili abs\b/,
     /\bshampoo\b/, /\bcondicionador\b/, /\bsabonete\b/, /\bdesodorante\b/,
-    /\bantitransp/, /\babsorvente\b/, /\bcreme dental\b/, /\bpasta dental\b/,
+    /\bantitransp/, /\babsorvent/, /\bcreme dental\b/, /\bpasta dental\b/,
     /\bescova dental\b/, /\bfio dental\b/, /\benxaguante bucal\b/, /\bfralda\b/,
     /\bpapel higienico\b/, /\bcotonete\b/, /\bbarbeador\b/, /\baparelho de barbear\b/,
     /\bcreme de barbear\b/, /\btintura\b/, /\bcoloracao\b/, /\bhidratante\b/,
@@ -25,7 +26,7 @@ function classify(value) {
     /\bfixador de cabelo\b/, /\bgel cabelo\b/, /\bcreme pentear\b/,
   ])) return "Higiene";
 
-  if (matches(text, [
+  if (!/\bamaciante de carne\b/.test(text) && matches(text, [
     /\bdetergente\b/, /\bdesinfetante\b/, /\bamaciante\b/, /\bsabao\b/,
     /\blava roupa\b/, /\bagua sanitaria\b/, /\blimpador\b/, /\bdesengordurante\b/,
     /\besponja\b/, /\bsaco de lixo\b/, /\binseticida\b/, /\brepelente eletrico\b/,
@@ -34,6 +35,7 @@ function classify(value) {
   ])) return "Limpeza";
 
   if (matches(text, [
+    /\bmansao maromba\b/, /\babracadabra\b/, /\bcombo do jiraya\b/,
     /\brefrigerante\b/, /\bcerveja\b/, /\bchopp\b/, /\bvinho\b/, /\bvodka\b/,
     /\bwhisky\b/, /\bcachaca\b/, /\benergetico\b/, /\bisotonico\b/,
     /\bsuco\b/, /\bnectar\b/, /\bagua mineral\b/, /\bagua tonica\b/,

@@ -24,18 +24,23 @@ function classify(value) {
     /\bcreme de barbear\b/, /\btintura\b/, /\bcoloracao\b/, /\bhidratante\b/,
     /\bprotetor solar\b/, /\bdepilador\b/, /\bacetona\b/, /\besmalte\b/,
     /\bfixador de cabelo\b/, /\bgel cabelo\b/, /\bcreme pentear\b/,
+    /\bagua oxigenada\b/,
   ])) return "Higiene";
 
-  if (!/\bamaciante de carne\b/.test(text) && matches(text, [
+  if (!/\b(carne|carnes|sal grosso|tempero)\b/.test(text) && matches(text, [
     /\bdetergente\b/, /\bdesinfetante\b/, /\bamaciante\b/, /\bsabao\b/,
     /\blava roupa\b/, /\bagua sanitaria\b/, /\blimpador\b/, /\bdesengordurante\b/,
     /\besponja\b/, /\bsaco de lixo\b/, /\binseticida\b/, /\brepelente eletrico\b/,
     /\balcool (gel|liquido)?\b/, /\bpano multiuso\b/, /\blustra moveis\b/,
     /\bpurificador de ar\b/, /\bodorizador\b/, /\bvassoura\b/, /\brodo\b/,
+    /\balvejante\b/, /\blava roupas?\b/, /\bsaponaceo\b/, /\bsapolio\b/,
+    /\bmultiuso\b/, /\bremovedor\b/, /\bremovedpr\b/,
   ])) return "Limpeza";
 
   if (matches(text, [
     /\bmansao maromba\b/, /\babracadabra\b/, /\bcombo do jiraya\b/,
+    /\bachocolatad/, /\btodinho\b/, /\bchoco leite\b/, /\bchocoleite\b/,
+    /^agua (?!oxigenada|sanitaria)/,
     /\brefrigerante\b/, /\bcerveja\b/, /\bchopp\b/, /\bvinho\b/, /\bvodka\b/,
     /\bwhisky\b/, /\bcachaca\b/, /\benergetico\b/, /\bisotonico\b/,
     /\bsuco\b/, /\bnectar\b/, /\bagua mineral\b/, /\bagua tonica\b/,

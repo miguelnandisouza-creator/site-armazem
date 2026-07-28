@@ -14,13 +14,18 @@ export type CatalogProduct = {
 };
 
 export const categories = [
-  { name: "Hortifruti", icon: "leaf", color: "#dcedc8" },
-  { name: "Padaria", icon: "croissant", color: "#ffe2b8" },
   { name: "Mercearia", icon: "package", color: "#ffeaa7" },
   { name: "Bebidas", icon: "bottle", color: "#cfe8f6" },
   { name: "Frios", icon: "sandwich", color: "#ffd6d6" },
-  { name: "Limpeza", icon: "sparkles", color: "#d9eadf" },
+  { name: "Carnes", icon: "beef", color: "#f3d2cc" },
+  { name: "Congelados", icon: "snowflake", color: "#d9ebf7" },
+  { name: "Padaria", icon: "croissant", color: "#ffe2b8" },
+  { name: "Hortifruti", icon: "leaf", color: "#dcedc8" },
   { name: "Higiene", icon: "sparkles", color: "#f0dff4" },
+  { name: "Bebê", icon: "baby", color: "#f8e0e8" },
+  { name: "Limpeza", icon: "spray", color: "#d9eadf" },
+  { name: "Pet", icon: "paw", color: "#eadfc9" },
+  { name: "Utilidades", icon: "boxes", color: "#e1dfd8" },
 ] as const;
 
 export const products: CatalogProduct[] = [

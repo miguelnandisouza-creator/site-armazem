@@ -112,9 +112,15 @@ async function lookupExternalProduct(domain: string, barcode: string) {
 
 function inferCategory(tags: string[]) {
   const value = tags.join(" ").toLowerCase();
+  if (/pet-food|dog-food|cat-food|animal-food/.test(value)) return "Pet";
+  if (/baby-food|diaper|nappies|feeding-bottle|pacifier/.test(value)) return "Bebê";
+  if (/cleaning|detergent|disinfectant|laundry|household-cleaner/.test(value)) return "Limpeza";
+  if (/hygiene|cosmetic|shampoo|deodorant|toothpaste|body-care|hair-care/.test(value)) return "Higiene";
+  if (/frozen|ice-cream|pizza|ready-meal/.test(value)) return "Congelados";
+  if (/meat|poultry|sausage|bacon/.test(value)) return "Carnes";
   if (/beverage|drink|juice|water|soda|beer|wine/.test(value)) return "Bebidas";
-  if (/bread|bakery|cake|biscuit/.test(value)) return "Padaria";
-  if (/cheese|dairy|meat|cold-cut/.test(value)) return "Frios";
-  if (/fruit|vegetable|produce/.test(value)) return "Hortifruti";
+  if (/cheese|yogurt|dairy|cold-cut/.test(value)) return "Frios";
+  if (/bread|fresh-bakery/.test(value)) return "Padaria";
+  if (/fresh-fruit|fresh-vegetable|fresh-produce/.test(value)) return "Hortifruti";
   return "Mercearia";
 }

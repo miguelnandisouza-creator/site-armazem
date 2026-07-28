@@ -1,0 +1,186 @@
+[
+  {
+    "barcode": "7891000319543",
+    "name": "Mucilon Nestle 180g Sache Arroz E Aveia",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "É cereal infantil Mucilon de arroz e aveia, destinado à alimentação de bebês e crianças pequenas."
+  },
+  {
+    "barcode": "7891000319628",
+    "name": "Mucilon Nestle Arroz Sache 180g",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "É cereal infantil Mucilon de arroz, destinado à alimentação de bebês e crianças pequenas."
+  },
+  {
+    "barcode": "7891000356890",
+    "name": "Mucilon Nestle Multicereais 360g",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "É cereal infantil Mucilon multicereais, destinado à alimentação de bebês e crianças pequenas."
+  },
+  {
+    "barcode": "7891000379585",
+    "name": "Nescau Nestle Lata 200g",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebidas",
+    "confidence": "high",
+    "reason": "É achocolatado em pó Nescau; os achocolatados foram definidos como parte de Bebidas no catálogo."
+  },
+  {
+    "barcode": "7899674039590",
+    "name": "Odorizante De Ambiente Cravo E Canela",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Limpeza",
+    "confidence": "high",
+    "reason": "É um odorizante de ambiente, produto doméstico para perfumar o local, e não um alimento."
+  },
+  {
+    "barcode": "7898741950691",
+    "name": "Óleo 3 Em 1 Apinil 60ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "O GTIN identifica o Blend Oil 3 em 1 Apinil para reparação capilar, um produto de cuidados pessoais."
+  },
+  {
+    "barcode": "7898211382076",
+    "name": "Oleo Capilar Rícino 60ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "O próprio nome identifica um óleo capilar de rícino, portanto pertence a cuidados pessoais."
+  },
+  {
+    "barcode": "7898211383820",
+    "name": "Oleo Capilar Rosa Mosqueta 60ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "O próprio nome identifica um óleo capilar de rosa-mosqueta, portanto pertence a cuidados pessoais."
+  },
+  {
+    "barcode": "7896235354031",
+    "name": "Oleo Corp Paixao Framboesa Negra 100ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "É óleo corporal Paixão, um cosmético de hidratação e cuidados pessoais."
+  },
+  {
+    "barcode": "7899674039989",
+    "name": "Oleo De Maquina",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Utilidades",
+    "confidence": "high",
+    "reason": "O GTIN corresponde a óleo lubrificante Chemicolor para máquina de costura, um item de manutenção doméstica."
+  },
+  {
+    "barcode": "7896050500255",
+    "name": "Oleo De Peroba 100ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Limpeza",
+    "confidence": "high",
+    "reason": "Óleo de peroba é usado para limpar, conservar e dar brilho a móveis e superfícies de madeira."
+  },
+  {
+    "barcode": "7896902285446",
+    "name": "Oleo De Ricino Puro Farmax 100ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "É óleo de rícino cosmético Farmax para pele e cabelos, um produto de cuidados pessoais."
+  },
+  {
+    "barcode": "7898741950684",
+    "name": "Óleo De Rosa Mosqueta Babbaloko Apinil 60ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "É óleo de rosa-mosqueta da linha cosmética Babbaloko/Apinil, destinado a cuidados pessoais."
+  },
+  {
+    "barcode": "7896902217003",
+    "name": "Oleo De Rosa Mosqueta Farmax 100ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "É óleo de rosa-mosqueta cosmético Farmax para pele e cabelos, um produto de cuidados pessoais."
+  },
+  {
+    "barcode": "7898919411931",
+    "name": "Oleo Paixao Tentadora 100ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "É óleo corporal Paixão Tentadora, um cosmético de hidratação e cuidados pessoais."
+  },
+  {
+    "barcode": "7891203068231",
+    "name": "Panco Bisnack",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Padaria",
+    "confidence": "high",
+    "reason": "Bisnack Panco é pão tipo bisnaguinha; deve ficar junto aos pães e demais itens de Padaria."
+  },
+  {
+    "barcode": "7891962064048",
+    "name": "Pao De Forma Bauducco Trad",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Padaria",
+    "confidence": "high",
+    "reason": "O GTIN identifica pão de forma tradicional Bauducco, pertencente à seção de Padaria."
+  },
+  {
+    "barcode": "7898215151807",
+    "name": "Pira Kids Chocolate 200ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebidas",
+    "confidence": "high",
+    "reason": "É bebida láctea sabor chocolate pronta para beber, equivalente a outros achocolatados líquidos da categoria Bebidas."
+  },
+  {
+    "barcode": "7893000394209",
+    "name": "Qualy Cremosa Com Sal 500g",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O GTIN identifica margarina Qualy Cremosa com sal de 500 g, produto refrigerado da seção de Frios."
+  },
+  {
+    "barcode": "7896094905634",
+    "name": "Sab. Pompom Locao Hidratante 80g",
+    "currentCategory": "Higiene",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "O GTIN identifica sabonete infantil Pom Pom Loção Hidratante, formulado para a pele do bebê."
+  },
+  {
+    "barcode": "7896094905627",
+    "name": "Sabonete Pompom Glicerinado 80g",
+    "currentCategory": "Higiene",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "É sabonete glicerinado infantil Pom Pom, pertencente à linha de higiene do bebê."
+  },
+  {
+    "barcode": "7898149358518",
+    "name": "Sb Biofleur Leite E Aveia",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "A abreviação “Sb” e a linha Biofleur identificam sabonete de leite e aveia, um item de higiene pessoal."
+  },
+  {
+    "barcode": "7891962053189",
+    "name": "Torrada Tradicional Bauducco 142g",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Padaria",
+    "confidence": "high",
+    "reason": "O GTIN identifica torrada tradicional Bauducco; produtos equivalentes do catálogo estão agrupados em Padaria."
+  }
+]

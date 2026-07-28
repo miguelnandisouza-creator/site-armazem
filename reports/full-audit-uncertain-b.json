@@ -1,0 +1,10 @@
+[
+  {
+    "barcode": "7898908236569",
+    "name": "Hburguer Chuletao",
+    "currentCategory": "Carnes",
+    "proposedCategory": "Revisar",
+    "confidence": "low",
+    "reason": "O nome indica hambúrguer Chuletão e um GTIN adjacente da mesma linha (7898908236552) é vendido congelado, mas não foi encontrada uma fonte confiável para confirmar a apresentação exata deste código; é preciso conferir a embalagem."
+  }
+]

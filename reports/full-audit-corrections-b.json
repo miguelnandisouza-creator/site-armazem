@@ -1,0 +1,106 @@
+[
+  {
+    "barcode": "7898963171904",
+    "name": "Diploko Energy Neon 10g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Mercearia",
+    "confidence": "high",
+    "reason": "O GTIN identifica o pirulito Diploko Neon Energy sabor cítrico de 10 g; apesar de “Energy” no nome, não é bebida."
+  },
+  {
+    "barcode": "7896509973876",
+    "name": "Elixir Beauttcolor Oleo Nutritivo Queratina 40ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "É um elixir/óleo nutritivo capilar BeautyColor com queratina, portanto pertence a cuidados pessoais."
+  },
+  {
+    "barcode": "789609973838",
+    "name": "Elixir Beautycolor Oleo Nutri Blend 7 Oleos 40ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "O nome identifica claramente um óleo reparador capilar BeautyColor Blend 7 Óleos, produto de cuidados pessoais."
+  },
+  {
+    "barcode": "7896509973852",
+    "name": "Elixir Beautycolor Oleo Nutri Oleo De Coco 40ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Higiene",
+    "confidence": "high",
+    "reason": "O GTIN corresponde ao elixir capilar BeautyColor Óleo de Coco de 40 ml, não a um item alimentício."
+  },
+  {
+    "barcode": "7891097101977",
+    "name": "Fermentado Morango Bob Esponja 480g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É leite fermentado Elegê/Bob Esponja de morango em embalagem com 6 unidades, um lácteo refrigerado."
+  },
+  {
+    "barcode": "7891097101991",
+    "name": "Fermentado Uva Bob Esponja 480g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É leite fermentado Elegê/Bob Esponja de uva em embalagem com 6 unidades, um lácteo refrigerado."
+  },
+  {
+    "barcode": "7891021001946",
+    "name": "Filtro Cafe  Melita 103",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Utilidades",
+    "confidence": "high",
+    "reason": "O GTIN identifica filtro de papel Melitta nº 103; é um utensílio para preparo de café, não um alimento."
+  },
+  {
+    "barcode": "7898196620095",
+    "name": "Geladinho 10un",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Congelados",
+    "confidence": "high",
+    "reason": "O código corresponde ao Gel Fruta/Geladinho em pacote de 10 unidades, produto destinado ao congelamento e consumo como sobremesa congelada."
+  },
+  {
+    "barcode": "7898196620019",
+    "name": "Geladinho 40un",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Congelados",
+    "confidence": "high",
+    "reason": "O código corresponde ao Gel Fruta/Geladinho em pacote de 40 unidades, produto destinado ao congelamento e consumo como sobremesa congelada."
+  },
+  {
+    "barcode": "7896279127073",
+    "name": "Kit Shampoo E Condicionador Baby Camomila",
+    "currentCategory": "Higiene",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "O próprio nome identifica um kit de shampoo e condicionador da linha Baby, devendo ficar junto aos produtos infantis."
+  },
+  {
+    "barcode": "7896279127080",
+    "name": "Kit Shampoo E Condicionador Baby Lavanda",
+    "currentCategory": "Higiene",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "O próprio nome identifica um kit de shampoo e condicionador da linha Baby, devendo ficar junto aos produtos infantis."
+  },
+  {
+    "barcode": "7891097087455",
+    "name": "Leite Ferm Bob Esponja Uva 80g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O GTIN e o nome identificam leite fermentado Elegê/Bob Esponja de uva, um produto lácteo refrigerado."
+  },
+  {
+    "barcode": "7891331018122",
+    "name": "Mingau Nutribom 180g Ageia E Arroz",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebê",
+    "confidence": "high",
+    "reason": "O GTIN identifica o cereal infantil Nutribom aveia e arroz; a classificação comercial e fiscal o descreve como preparação para alimentação de crianças."
+  }
+]

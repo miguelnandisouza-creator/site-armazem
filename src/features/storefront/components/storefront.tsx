@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  ArrowRight, Check, ChevronRight, Clock3, Croissant, Heart, Home, Leaf,
-  MapPin, Menu, MessageCircle, Minus, Package, Plus, Search, ShoppingBasket,
-  Sparkles, Store, UserRound, X,
+  ArrowRight, Baby, Beef, Boxes, Check, ChevronRight, Clock3, Croissant, Heart,
+  Home, Leaf, MapPin, Menu, MessageCircle, Minus, Package, PawPrint, Plus,
+  Search, ShoppingBasket, Snowflake, Sparkles, SprayCan, Store, UserRound, X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,8 +12,22 @@ import { AnimatePresence, motion } from "framer-motion";
 import { categories, formatPrice, products as demoProducts, type CatalogProduct } from "../data/catalog";
 import type { LocalProduct } from "@/features/admin/products/types";
 import { createClient } from "@/lib/supabase/client";
+import { ProductImage } from "@/components/product-image";
 
-const categoryIcons = { leaf: Leaf, croissant: Croissant, package: Package, bottle: Store, sandwich: ShoppingBasket, sparkles: Sparkles };
+const categoryIcons = {
+  baby: Baby,
+  beef: Beef,
+  bottle: Store,
+  boxes: Boxes,
+  croissant: Croissant,
+  leaf: Leaf,
+  package: Package,
+  paw: PawPrint,
+  sandwich: ShoppingBasket,
+  snowflake: Snowflake,
+  sparkles: Sparkles,
+  spray: SprayCan,
+};
 const supabase = createClient();
 
 export function Storefront() {
@@ -122,7 +136,7 @@ export function Storefront() {
 
       <section id="categorias" className="mx-auto max-w-[1380px] px-4 py-14 sm:px-6 lg:px-10 lg:py-20">
         <div className="mb-7 flex items-end justify-between"><div><p className="eyebrow">Corredores</p><h2>Encontre sem perder tempo</h2></div><button onClick={() => { setCategory("Todos"); setVisibleLimit(24); }} className="hidden items-center gap-1 text-sm font-bold sm:flex">Ver todas as categorias <ChevronRight size={17} /></button></div>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-7">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
           {categories.map((item) => {
             const Icon = categoryIcons[item.icon];
             const active = category === item.name;
@@ -191,12 +205,12 @@ function ProductCard({ product, favorite, listed, onFavorite, onList }: { produc
   const unavailable = product.stock === 0;
   return <motion.article layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="group min-w-0 border-2 border-[#111315] bg-white p-2 shadow-[4px_4px_0_#111315] sm:p-3">
     <div className="relative aspect-[4/3] overflow-hidden" style={{ background: product.accent }}>
-      {product.image ? <Image src={product.image} alt={product.name} fill unoptimized className="object-contain p-4 transition duration-500 group-hover:scale-[1.04]" sizes="(max-width: 640px) 50vw, 25vw" /> : <div className="grid h-full place-items-center bg-[#eeeae0] text-center"><div><Package size={36} className="mx-auto text-black/35" /><p className="mt-2 px-4 text-[10px] font-black uppercase text-black/40">Imagem em breve</p></div></div>}
+      <ProductImage src={product.image} alt={product.name} sizes="(max-width: 640px) 50vw, 25vw" className="transition duration-500 group-hover:scale-[1.04]" />
       {product.tag && <span className="absolute left-2 top-2 -rotate-2 border-2 border-[#111315] bg-[#ffd900] px-2 py-1 text-[10px] font-black uppercase text-[#111315] sm:left-3 sm:top-3">{product.tag}</span>}
       {unavailable && <span className="absolute bottom-2 left-2 bg-[#111315] px-2 py-1 text-[10px] font-black uppercase text-white">Indisponível</span>}
       <button onClick={onFavorite} aria-label={favorite ? `Remover ${product.name} dos favoritos` : `Favoritar ${product.name}`} className="absolute right-2 top-2 grid h-9 w-9 place-items-center bg-white/95 shadow-sm sm:right-3 sm:top-3"><Heart size={17} className={favorite ? "fill-[#d83b36] text-[#d83b36]" : ""} /></button>
     </div>
-    <div className="pt-4"><p className="text-[11px] font-bold uppercase text-[#758078]">{product.brand} · {product.unit}</p><h3 className="mt-1 min-h-10 text-sm font-extrabold leading-5 sm:text-base">{product.name}</h3>
+    <div className="pt-4"><p className="text-[11px] font-bold uppercase text-[#758078]">{[product.brand, product.unit].filter(Boolean).join(" · ") || "Informações em atualização"}</p><h3 className="mt-1 min-h-10 text-sm font-extrabold leading-5 sm:text-base">{product.name}</h3>
       <div className="mt-3 flex min-h-11 items-end justify-between gap-2"><div>{product.previousPrice && <p className="text-[11px] text-[#60605c] line-through">{formatPrice(product.previousPrice)}</p>}<p className="text-lg font-black text-[#111315] sm:text-xl">{product.price > 0 ? formatPrice(product.price) : "Consulte o preço"}</p></div>{discount > 0 && <span className="bg-[#ffd900] px-2 py-1 text-[11px] font-black text-[#111315]">-{discount}%</span>}</div>
       <button disabled={unavailable} onClick={onList} className={`mt-3 flex h-10 w-full items-center justify-center gap-2 border-2 border-[#111315] text-xs font-black uppercase transition disabled:cursor-not-allowed disabled:border-black/20 disabled:bg-black/10 disabled:text-black/40 ${listed ? "bg-[#ffd900] text-[#111315]" : "bg-[#111315] text-[#ffd900] hover:bg-[#ffd900] hover:text-[#111315]"}`}>{unavailable ? "Sem estoque" : listed ? <><Check size={15} /> Na lista</> : <><ShoppingBasket size={15} /> Adicionar</>}</button>
     </div>
@@ -248,7 +262,7 @@ function ShoppingDrawer({ products: items, onClose, onRemove }: { products: Cata
     <header className="flex min-h-20 items-center justify-between border-b-2 border-[#111315] px-5 py-4"><div><p className="text-xs font-black uppercase text-[#d6ad00]">Finalizar pelo WhatsApp</p><h2 className="text-xl">Meu pedido · {items.length} {items.length === 1 ? "item" : "itens"}</h2></div><button onClick={onClose} className="grid h-10 w-10 place-items-center border-2 border-[#111315]" aria-label="Fechar"><X size={19} /></button></header>
     <div className="flex-1 overflow-y-auto">
       {items.length ? <form id="order-form" onSubmit={sendOrder}>
-        <div className="space-y-4 p-5">{items.map((product) => <div key={product.id} className="flex gap-3 border-b border-[#111315]/10 pb-4"><div className="relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden bg-[#eeeae0]">{product.image ? <Image src={product.image} alt="" fill unoptimized className="object-contain p-2" sizes="80px" /> : <Package className="text-black/30" />}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{product.name}</p><p className="mt-1 text-sm font-black text-[#a08100]">{product.price > 0 ? formatPrice(product.price) : "Preço a confirmar"}</p><div className="mt-2 inline-flex items-center border-2 border-[#111315]"><button type="button" onClick={() => changeQuantity(product, -1)} className="grid h-8 w-8 place-items-center" aria-label="Diminuir quantidade"><Minus size={14} /></button><span className="grid h-8 min-w-9 place-items-center border-x-2 border-[#111315] text-xs font-black">{quantities[product.id] || 1}</span><button type="button" onClick={() => changeQuantity(product, 1)} className="grid h-8 w-8 place-items-center" aria-label="Aumentar quantidade"><Plus size={14} /></button></div></div><button type="button" onClick={() => onRemove(product.id)} aria-label={`Remover ${product.name}`} className="self-start text-red-600"><X size={17} /></button></div>)}</div>
+        <div className="space-y-4 p-5">{items.map((product) => <div key={product.id} className="flex gap-3 border-b border-[#111315]/10 pb-4"><div className="relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden bg-[#eeeae0]"><ProductImage src={product.image} alt={product.name} sizes="80px" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{product.name}</p><p className="mt-1 text-sm font-black text-[#a08100]">{product.price > 0 ? formatPrice(product.price) : "Preço a confirmar"}</p><div className="mt-2 inline-flex items-center border-2 border-[#111315]"><button type="button" onClick={() => changeQuantity(product, -1)} className="grid h-8 w-8 place-items-center" aria-label="Diminuir quantidade"><Minus size={14} /></button><span className="grid h-8 min-w-9 place-items-center border-x-2 border-[#111315] text-xs font-black">{quantities[product.id] || 1}</span><button type="button" onClick={() => changeQuantity(product, 1)} className="grid h-8 w-8 place-items-center" aria-label="Aumentar quantidade"><Plus size={14} /></button></div></div><button type="button" onClick={() => onRemove(product.id)} aria-label={`Remover ${product.name}`} className="self-start text-red-600"><X size={17} /></button></div>)}</div>
         <div className="border-y-2 border-[#111315] bg-white p-5"><h3 className="text-lg font-black uppercase">Dados para entrega</h3><div className="mt-4 grid gap-4"><OrderField label="Nome" name="customerName" required placeholder="Quem receberá o pedido?" /><OrderField label="Telefone" name="customerPhone" required type="tel" placeholder="(48) 99999-9999" /><OrderField label="Endereço completo" name="address" required placeholder="Rua, número, bairro e referência" /><label><span className="field-label">Forma de pagamento</span><select required name="payment" className="field mt-2"><option value="">Selecione</option><option>PIX</option><option>Dinheiro</option><option>Cartão na entrega</option></select></label><label><span className="field-label">Observações</span><textarea name="notes" rows={3} className="mt-2 w-full border-2 border-[#111315] bg-white p-3 outline-none" placeholder="Troco, horário ou instruções para entrega" /></label></div></div>
       </form> : <div className="grid h-full min-h-96 place-items-center p-6 text-center"><div><ShoppingBasket className="mx-auto text-[#d6ad00]" size={34} /><p className="mt-4 font-extrabold">Seu pedido está vazio</p><p className="mt-1 text-sm text-[#686862]">Adicione produtos para fazer seu pedido.</p><button onClick={onClose} className="mt-5 text-sm font-bold text-[#d6ad00]">Explorar produtos</button></div></div>}
     </div>
@@ -263,7 +277,9 @@ function OrderField({ label, name, required, type = "text", placeholder }: { lab
 function toCatalogProduct(product: LocalProduct): CatalogProduct {
   const accents: Record<string, string> = {
     Mercearia: "#f3dfb8", Bebidas: "#d7e8f2", Frios: "#e8e2f2",
-    Padaria: "#f1d5b5", Hortifruti: "#dce8c9", Limpeza: "#d7e9e5", Higiene: "#eaddef",
+    Carnes: "#f0d0ca", Congelados: "#d8e8f3", Padaria: "#f1d5b5",
+    Hortifruti: "#dce8c9", Limpeza: "#d7e9e5", Higiene: "#eaddef",
+    "Bebê": "#f4dfe7", Pet: "#eadfc9", Utilidades: "#e2ded5",
   };
   return {
     id: hashBarcode(product.barcode),

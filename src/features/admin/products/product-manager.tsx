@@ -5,13 +5,16 @@ import {
   ArrowLeft, Barcode, Camera, Check, Edit3, PackagePlus, Power,
   Search, Trash2, X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ProductImage } from "@/components/product-image";
 import { createClient } from "@/lib/supabase/client";
 import { emptyProduct, type LocalProduct, type ProductDraft } from "./types";
 
-const categories = ["Mercearia", "Bebidas", "Frios", "Padaria", "Hortifruti", "Limpeza", "Higiene"];
+const categories = [
+  "Mercearia", "Bebidas", "Frios", "Carnes", "Congelados", "Padaria",
+  "Hortifruti", "Higiene", "Bebê", "Limpeza", "Pet", "Utilidades", "Revisar",
+];
 const supabase = createClient();
 
 export function ProductManager() {
@@ -204,7 +207,7 @@ export function ProductManager() {
         {filtered.length ? <table className="w-full min-w-[760px] border-collapse text-left">
           <thead className="bg-[#111315] text-xs uppercase text-[#ffd900]"><tr><th className="p-4">Produto</th><th className="p-4">Código</th><th className="p-4">Preço</th><th className="p-4">Estoque</th><th className="p-4">Status</th><th className="p-4 text-right">Ações</th></tr></thead>
           <tbody>{filtered.map((product) => <tr key={product.id} className="border-b border-black/10 last:border-0">
-            <td className="p-4"><div className="flex items-center gap-3">{product.image ? <Image src={product.image} alt="" width={48} height={48} unoptimized className="h-12 w-12 object-contain" /> : <span className="grid h-12 w-12 place-items-center bg-[#eee]"><Barcode size={20} /></span>}<div><p className="font-black">{product.name}</p><p className="text-xs text-black/55">{product.brand} · {product.unit}</p></div></div></td>
+            <td className="p-4"><div className="flex items-center gap-3"><span className="relative block h-12 w-12 shrink-0 overflow-hidden bg-[#eee]"><ProductImage src={product.image} alt={product.name} sizes="48px" /></span><div><p className="font-black">{product.name}</p><p className="text-xs text-black/55">{[product.brand, product.unit].filter(Boolean).join(" · ") || "Metadados pendentes"}</p></div></div></td>
             <td className="p-4 font-mono text-xs">{product.barcode}</td><td className="p-4 font-black">{formatPrice(product.price)}</td><td className="p-4">{product.stock}</td>
             <td className="p-4"><button onClick={() => setProducts((current) => current.map((item) => item.id === product.id ? { ...item, active: !item.active } : item))} className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-black uppercase ${product.active ? "bg-[#ffd900]" : "bg-black/10"}`}><Power size={12} />{product.active ? "Ativo" : "Inativo"}</button></td>
             <td className="p-4"><div className="flex justify-end gap-2"><button onClick={() => edit(product)} className="grid h-9 w-9 place-items-center border border-black/20" aria-label={`Editar ${product.name}`}><Edit3 size={16} /></button><button onClick={() => confirm(`Excluir ${product.name}?`) && setProducts((current) => current.filter((item) => item.id !== product.id))} className="grid h-9 w-9 place-items-center border border-black/20 text-red-600" aria-label={`Excluir ${product.name}`}><Trash2 size={16} /></button></div></td>

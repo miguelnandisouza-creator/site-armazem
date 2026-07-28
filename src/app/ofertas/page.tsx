@@ -1,7 +1,7 @@
-import { ArrowLeft, Package, ShoppingBasket, Sparkles } from "lucide-react";
-import Image from "next/image";
+import { ArrowLeft, ShoppingBasket, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ProductImage } from "@/components/product-image";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,7 @@ export default async function OffersPage() {
           const discount = normal > 0 ? Math.round((1 - promotional / normal) * 100) : 0;
           return <article key={id} className="border-2 border-[#111315] bg-white p-2 shadow-[4px_4px_0_#111315] sm:p-3">
             <div className="relative aspect-[4/3] overflow-hidden bg-[#fff1a8]">
-              {product.image_url ? <Image src={product.image_url} alt={product.name} fill unoptimized className="object-contain p-4" sizes="(max-width: 640px) 50vw, 25vw"/> : <div className="grid h-full place-items-center"><Package size={38} className="text-black/30"/></div>}
+              <ProductImage src={product.image_url} alt={product.name} sizes="(max-width: 640px) 50vw, 25vw" />
               <span className="absolute left-2 top-2 border-2 border-[#111315] bg-[#ffd900] px-2 py-1 text-[10px] font-black uppercase">Oferta{discount > 0 ? ` -${discount}%` : ""}</span>
             </div>
             <div className="pt-4">

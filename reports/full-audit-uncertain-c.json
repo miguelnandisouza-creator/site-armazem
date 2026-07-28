@@ -1,0 +1,10 @@
+[
+  {
+    "barcode": "7896480693190",
+    "name": "Monstrinhos  Kids",
+    "currentCategory": "Revisar",
+    "proposedCategory": "Revisar",
+    "confidence": "low",
+    "reason": "O cadastro traz somente o nome genérico “Monstrinhos Kids”, não possui imagem e o GTIN exato não apareceu nas bases consultadas. Códigos próximos sugerem uma linha infantil, possivelmente de higiene bucal, mas não há evidência suficiente para escolher entre Bebê, Higiene ou Utilidades sem conferir a embalagem."
+  }
+]

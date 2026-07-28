@@ -1,0 +1,170 @@
+[
+  {
+    "barcode": "7896610901577",
+    "name": "Aneis De Cebola",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Congelados",
+    "confidence": "high",
+    "reason": "O GTIN corresponde a anéis de cebola Excelsior congelados, não a um produto seco de mercearia."
+  },
+  {
+    "barcode": "7896610904608",
+    "name": "Aneis De Cebola",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Congelados",
+    "confidence": "high",
+    "reason": "O GTIN corresponde a anéis de cebola Excelsior congelados de 400 g."
+  },
+  {
+    "barcode": "7908274803934",
+    "name": "Apito Bol Torcida",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Utilidades",
+    "confidence": "high",
+    "reason": "O código identifica um apito temático para torcida/festa, e não um alimento."
+  },
+  {
+    "barcode": "7891962042725",
+    "name": "Balducco Pao  De Mel 30g",
+    "currentCategory": "Padaria",
+    "proposedCategory": "Mercearia",
+    "confidence": "medium",
+    "reason": "É um pão de mel Bauducco industrializado e embalado individualmente, mais compatível com doces e biscoitos de mercearia do que com pães frescos."
+  },
+  {
+    "barcode": "82140007",
+    "name": "Batavinho Choco Branco",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "Batavinho é uma sobremesa láctea/petit suisse refrigerada, não uma bebida."
+  },
+  {
+    "barcode": "7891097103391",
+    "name": "Batavo Iog Bananmaca  E Cereal 125kg",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O nome e o GTIN identificam iogurte Batavo de banana, maçã e cereais; é um produto lácteo refrigerado."
+  },
+  {
+    "barcode": "7896256603187",
+    "name": "Beb Lac Futurol Coco 170g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É bebida láctea fermentada Frutirol/Tirol refrigerada, conforme a linha do fabricante."
+  },
+  {
+    "barcode": "7891097101892",
+    "name": "Beb Lac Pense Zero Batavo Morango 170g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É bebida láctea/iogurte Batavo Pense Zero refrigerado."
+  },
+  {
+    "barcode": "7896256600209",
+    "name": "Beb Lac Tirol Frutirol 480g Ftas",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É bebida láctea fermentada Frutirol da Tirol, vendida refrigerada."
+  },
+  {
+    "barcode": "7896256603170",
+    "name": "Beb Lactea Tirol 830ml",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O produto é uma bebida láctea fermentada Tirol que exige refrigeração."
+  },
+  {
+    "barcode": "7896256603194",
+    "name": "Beb Lactea Tirol Garrafa 830 G Coco",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O produto é uma bebida láctea fermentada Tirol sabor coco que exige refrigeração."
+  },
+  {
+    "barcode": "7891164028701",
+    "name": "Bebida Lactea Morango 0 Lactose 850g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O GTIN identifica bebida láctea/iogurte Aurora zero lactose de morango, produto refrigerado."
+  },
+  {
+    "barcode": "7896256601251",
+    "name": "Bebida Pacote Tirol Coco 900g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É bebida láctea fermentada Tirol em pacote, com conservação refrigerada."
+  },
+  {
+    "barcode": "7896256604047",
+    "name": "Bebida Pacote Tirol Fruta E Sereais 900g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É bebida láctea fermentada Tirol de frutas e cereais, com conservação refrigerada."
+  },
+  {
+    "barcode": "7896256601237",
+    "name": "Bebida Pacote Tirol Morango 900g",
+    "currentCategory": "Bebidas",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "É bebida láctea fermentada Tirol de morango, com conservação refrigerada."
+  },
+  {
+    "barcode": "7891962063874",
+    "name": "Bisnaguinha 260g Bauducco",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Padaria",
+    "confidence": "high",
+    "reason": "É pão tipo bisnaguinha Bauducco, portanto pertence à categoria de pães."
+  },
+  {
+    "barcode": "7896045110636",
+    "name": "Cappuccino 3corac Doce De Leite 250ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebidas",
+    "confidence": "high",
+    "reason": "O GTIN identifica cappuccino 3 Corações pronto para beber em embalagem de 250 ml."
+  },
+  {
+    "barcode": "7896045110407",
+    "name": "Cappuccino 3corac Whey Classico 250ml",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebidas",
+    "confidence": "high",
+    "reason": "O GTIN identifica cappuccino 3 Corações com whey pronto para beber em embalagem de 250 ml."
+  },
+  {
+    "barcode": "7896005809518",
+    "name": "Capuccino Pronto Class",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebidas",
+    "confidence": "high",
+    "reason": "É cappuccino pronto para consumo, portanto deve ficar com as bebidas."
+  },
+  {
+    "barcode": "7898069401318",
+    "name": "Cocktail Alcoolico Wyslon Sab Canela",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Bebidas",
+    "confidence": "high",
+    "reason": "O próprio nome identifica uma bebida alcoólica sabor canela."
+  },
+  {
+    "barcode": "7891097106347",
+    "name": "Creamy Chantilly 90 G",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Frios",
+    "confidence": "high",
+    "reason": "O GTIN identifica sobremesa Batavo Creamy com chantilly, um produto lácteo refrigerado."
+  }
+]

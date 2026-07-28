@@ -2,7 +2,7 @@
 
 import {
   AlertTriangle, Boxes, CheckCircle2, Clock3, PackagePlus, Save,
-  Tags, Trash2, UserPlus, Users,
+  Tags, Trash2, Users,
 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
@@ -98,7 +98,6 @@ export function CategoriesPage() {
 export function UsersPage() {
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [error, setError] = useState("");
-  useEffect(() => { void loadUsers(); }, []);
   async function loadUsers() {
     const { data, error: queryError } = await supabase
       .from("profiles").select("id,full_name,email,role,active").order("full_name");
@@ -111,6 +110,19 @@ export function UsersPage() {
       active: profile.active,
     })));
   }
+  useEffect(() => {
+    supabase.from("profiles").select("id,full_name,email,role,active").order("full_name")
+      .then(({ data, error: queryError }) => {
+        if (queryError) { setError(queryError.message); return; }
+        setUsers((data || []).map((profile) => ({
+          id: profile.id,
+          name: profile.full_name || "Sem nome",
+          email: profile.email || "E-mail não disponível",
+          role: profile.role,
+          active: profile.active,
+        })));
+      });
+  }, []);
   async function updateUser(id: string, values: Partial<Pick<TeamUser, "role" | "active">>) {
     const { error: updateError } = await supabase.from("profiles").update(values).eq("id", id);
     if (updateError) setError(updateError.message);
@@ -154,7 +166,6 @@ function Notice({ text }: { text: string }) { return <p className="flex items-ce
 function Empty({ title, text }: { title: string; text: string }) { return <div className="grid min-h-72 place-items-center border-2 border-dashed border-black/25 bg-white p-8 text-center"><div><Tags className="mx-auto"/><p className="mt-4 font-black uppercase">{title}</p><p className="mt-2 text-sm text-black/50">{text}</p></div></div>; }
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-[80] overflow-y-auto bg-black/65 p-4"><div className="mx-auto my-8 max-w-xl border-2 border-[#111315] bg-[#f3f1e9] shadow-[7px_7px_0_#ffd900]"><header className="flex items-center justify-between bg-[#111315] p-5 text-white"><h2 className="text-xl">{title}</h2><button onClick={onClose} className="admin-icon border-white/25">×</button></header><div className="p-5 sm:p-7">{children}</div></div></div>; }
 function StatusBadge({ promotion }: { promotion: Promotion }) { const now = new Date(); const status = !promotion.active ? "Pausada" : new Date(promotion.startsAt) > now ? "Agendada" : new Date(promotion.endsAt) < now ? "Encerrada" : "Ativa"; return <span className="flex items-center gap-1 bg-[#ffd900] px-2 py-1 text-xs font-black uppercase"><Clock3 size={12}/>{status}</span>; }
-function AdminField({ name, label, type = "text", required, defaultValue }: { name: string; label: string; type?: string; required?: boolean; defaultValue?: string }) { return <label><span className="field-label">{label}</span><input name={name} type={type} required={required} defaultValue={defaultValue} className="field mt-2"/></label>; }
 function ControlledAdminField({ name, label, value, onChange, type = "text" }: { name: string; label: string; value: string; onChange: (value: string) => void; type?: string }) { return <label><span className="field-label">{label}</span><input name={name} type={type} required value={value} onChange={(event) => onChange(event.target.value)} className="field mt-2"/></label>; }
 const formatPrice = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));

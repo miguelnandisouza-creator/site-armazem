@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "images.openfoodfacts.org" },
+      { protocol: "https", hostname: "images.openbeautyfacts.org" },
+      { protocol: "https", hostname: "images.openproductsfacts.org" },
+      { protocol: "https", hostname: "cdn-cosmos.bluesoft.com.br" },
     ],
   },
   async headers() {

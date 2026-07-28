@@ -1,0 +1,10 @@
+[
+  {
+    "barcode": "7898954887432",
+    "name": "Creme De Leite Mais Frius 300g",
+    "currentCategory": "Mercearia",
+    "proposedCategory": "Revisar",
+    "confidence": "low",
+    "reason": "Não foi possível confirmar pelo nome, código ou imagem se é creme de leite de prateleira ou creme fresco refrigerado; a embalagem precisa ser conferida."
+  }
+]

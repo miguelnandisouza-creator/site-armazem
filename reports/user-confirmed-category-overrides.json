@@ -1,0 +1,20 @@
+[
+  {
+    "barcode": "7898954887432",
+    "name": "Creme De Leite Mais Frius 300g",
+    "category": "Mercearia",
+    "reason": "Confirmado pelo responsável do mercado: produto de prateleira."
+  },
+  {
+    "barcode": "7898908236569",
+    "name": "Hburguer Chuletao",
+    "category": "Congelados",
+    "reason": "Confirmado pelo responsável do mercado: produto congelado."
+  },
+  {
+    "barcode": "7894321722016",
+    "name": "Achocolatado Toddynho 200ml",
+    "category": "Bebidas",
+    "reason": "Achocolatado pronto para beber; fixado para impedir regressão para Mercearia."
+  }
+]

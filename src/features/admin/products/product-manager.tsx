@@ -9,7 +9,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ProductImage } from "@/components/product-image";
 import { createClient } from "@/lib/supabase/client";
-import { parseProductSpreadsheet, type ImportRow } from "./excel-import";
+import { parseProductSpreadsheet, type ImportMode, type ImportRow } from "./excel-import";
 import { emptyProduct, type LocalProduct, type ProductDraft } from "./types";
 
 const categories = [
@@ -31,6 +31,7 @@ export function ProductManager() {
   const [importOpen, setImportOpen] = useState(false);
   const [importMessage, setImportMessage] = useState("");
   const [importing, setImporting] = useState(false);
+  const [importMode, setImportMode] = useState<ImportMode>("products");
   const importInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -192,7 +193,7 @@ export function ProductManager() {
     setImportMessage("Lendo e validando a planilha...");
     setImportOpen(true);
     try {
-      const rows = await parseProductSpreadsheet(file);
+      const rows = await parseProductSpreadsheet(file, importMode);
       setImportRows(rows);
       setImportMessage("");
     } catch (error) {
@@ -212,6 +213,29 @@ export function ProductManager() {
       const { data: store, error: storeError } = await supabase
         .from("stores").select("id").eq("slug", "armazem-parada-obrigatoria").single();
       if (storeError) throw storeError;
+
+      if (importMode === "prices") {
+        let updated = 0;
+        let notFound = 0;
+        for (let offset = 0; offset < validRows.length; offset += 20) {
+          const chunk = validRows.slice(offset, offset + 20);
+          setImportMessage(`Atualizando preços ${Math.min(offset + chunk.length, validRows.length)} de ${validRows.length}...`);
+          const results = await Promise.all(chunk.map((row) => supabase.from("products")
+            .update({ price_cents: Math.round(row.price * 100) })
+            .eq("store_id", store.id).eq("ean", row.barcode).select("id")));
+          for (const result of results) {
+            if (result.error) throw result.error;
+            if (result.data?.length) updated += 1;
+            else notFound += 1;
+          }
+        }
+        const prices = new Map(validRows.map((row) => [row.barcode, row.price]));
+        setProducts((current) => current.map((product) =>
+          prices.has(product.barcode) ? { ...product, price: prices.get(product.barcode)! } : product,
+        ));
+        setImportMessage(`${updated} preços atualizados no Supabase.${notFound ? ` ${notFound} códigos não existiam e foram ignorados.` : ""}`);
+        return;
+      }
 
       const uniqueCategories = [...new Set(validRows.map((row) => row.category))];
       const categoryPayload = uniqueCategories.map((name) => ({
@@ -277,7 +301,7 @@ export function ProductManager() {
         </div>
         <div className="flex gap-2">
           <input ref={importInputRef} type="file" accept=".xlsx" className="hidden" onChange={(event) => void selectSpreadsheet(event.target.files?.[0])} />
-          <button onClick={() => importInputRef.current?.click()} className="flex h-11 items-center gap-2 border border-[#ffd900] px-4 text-sm font-black uppercase text-[#ffd900]"><Upload size={18} /> <span className="hidden sm:inline">Importar Excel</span></button>
+          <button onClick={() => { setImportRows([]); setImportMessage(""); setImportOpen(true); }} className="flex h-11 items-center gap-2 border border-[#ffd900] px-4 text-sm font-black uppercase text-[#ffd900]"><Upload size={18} /> <span className="hidden sm:inline">Importar Excel</span></button>
           <button onClick={openNew} className="flex h-11 items-center gap-2 bg-[#ffd900] px-4 text-sm font-black uppercase text-[#111315]"><PackagePlus size={18} /> <span className="hidden sm:inline">Novo produto</span></button>
         </div>
       </div>
@@ -308,12 +332,15 @@ export function ProductManager() {
 
     {formOpen && <ProductForm draft={draft} setDraft={setDraft} editing={Boolean(editingId)} lookupMessage={lookupMessage} lookingUp={lookingUp} onLookup={() => lookup()} onScan={() => setScannerOpen(true)} onClose={() => setFormOpen(false)} onSave={save} />}
     {scannerOpen && <BarcodeScanner onClose={() => setScannerOpen(false)} onDetected={(code) => { setScannerOpen(false); void lookup(code); }} />}
-    {importOpen && <ImportPreview rows={importRows} message={importMessage} importing={importing} onConfirm={() => void confirmImport()} onClose={() => setImportOpen(false)} />}
+    {importOpen && <ImportPreview rows={importRows} message={importMessage} importing={importing} mode={importMode}
+      onModeChange={(mode) => { setImportMode(mode); setImportRows([]); setImportMessage(""); }}
+      onSelectFile={() => importInputRef.current?.click()} onConfirm={() => void confirmImport()} onClose={() => setImportOpen(false)} />}
   </main>;
 }
 
-function ImportPreview({ rows, message, importing, onConfirm, onClose }: {
-  rows: ImportRow[]; message: string; importing: boolean; onConfirm: () => void; onClose: () => void;
+function ImportPreview({ rows, message, importing, mode, onModeChange, onSelectFile, onConfirm, onClose }: {
+  rows: ImportRow[]; message: string; importing: boolean; mode: ImportMode;
+  onModeChange: (mode: ImportMode) => void; onSelectFile: () => void; onConfirm: () => void; onClose: () => void;
 }) {
   const valid = rows.filter((row) => row.errors.length === 0);
   const invalid = rows.length - valid.length;
@@ -325,7 +352,13 @@ function ImportPreview({ rows, message, importing, onConfirm, onClose }: {
         <button disabled={importing} onClick={onClose} className="grid h-10 w-10 place-items-center border border-white/20 disabled:opacity-40"><X /></button>
       </header>
       <div className="p-5 sm:p-7">
-        <div className="grid gap-3 sm:grid-cols-3"><Metric label="Linhas válidas" value={valid.length} /><Metric label="Com avisos" value={warnings} /><Metric label="Com erros" value={invalid} /></div>
+        <p className="text-xs font-black uppercase text-black/55">O que deseja fazer?</p>
+        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+          <button disabled={importing} onClick={() => onModeChange("products")} className={`border-2 p-4 text-left ${mode === "products" ? "border-[#111315] bg-[#ffd900]" : "border-black/20 bg-white"}`}><strong className="block uppercase">Cadastrar produtos</strong><span className="mt-1 block text-sm">Cria produtos novos e atualiza todos os dados dos existentes.</span></button>
+          <button disabled={importing} onClick={() => onModeChange("prices")} className={`border-2 p-4 text-left ${mode === "prices" ? "border-[#111315] bg-[#ffd900]" : "border-black/20 bg-white"}`}><strong className="block uppercase">Atualizar somente preços</strong><span className="mt-1 block text-sm">Altera apenas o preço. Códigos não cadastrados são ignorados.</span></button>
+        </div>
+        <button disabled={importing} onClick={onSelectFile} className="mt-4 flex h-12 w-full items-center justify-center gap-2 border-2 border-dashed border-[#111315] bg-white font-black uppercase"><FileSpreadsheet size={19} />{rows.length ? "Escolher outra planilha" : "Selecionar planilha .xlsx"}</button>
+        {rows.length > 0 && <div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Linhas válidas" value={valid.length} /><Metric label="Com avisos" value={warnings} /><Metric label="Com erros" value={invalid} /></div>}
         {message && <p className={`mt-5 p-4 font-bold ${message.startsWith("Erro") ? "bg-red-100 text-red-800" : "bg-[#fff3ad]"}`}>{message}</p>}
         {invalid > 0 && <p className="mt-5 flex gap-2 bg-red-100 p-4 text-sm font-bold text-red-800"><AlertTriangle className="shrink-0" size={19} />As linhas com erro não serão enviadas. Corrija a planilha e selecione-a novamente para incluí-las.</p>}
         {rows.length > 0 && <div className="mt-5 max-h-[48vh] overflow-auto border-2 border-[#111315] bg-white">
@@ -341,7 +374,7 @@ function ImportPreview({ rows, message, importing, onConfirm, onClose }: {
       </div>
       <footer className="flex flex-col justify-end gap-3 border-t-2 border-[#111315] bg-white p-5 sm:flex-row">
         <button disabled={importing} onClick={onClose} className="h-11 px-4 font-black uppercase disabled:opacity-40">Cancelar</button>
-        <button disabled={importing || !valid.length} onClick={onConfirm} className="flex h-11 items-center justify-center gap-2 bg-[#ffd900] px-5 font-black uppercase disabled:opacity-40"><Upload size={18} />{importing ? "Enviando..." : `Confirmar ${valid.length} produtos`}</button>
+        <button disabled={importing || !valid.length} onClick={onConfirm} className="flex h-11 items-center justify-center gap-2 bg-[#ffd900] px-5 font-black uppercase disabled:opacity-40"><Upload size={18} />{importing ? "Enviando..." : mode === "prices" ? `Atualizar ${valid.length} preços` : `Confirmar ${valid.length} produtos`}</button>
       </footer>
     </section>
   </div>;

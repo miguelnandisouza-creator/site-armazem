@@ -7,6 +7,8 @@ export type ImportRow = ProductDraft & {
   warnings: string[];
 };
 
+export type ImportMode = "products" | "prices";
+
 const aliases = {
   barcode: ["CODIGO", "CODIGO DE BARRAS", "EAN", "GTIN", "BARCODE"],
   name: ["DESCRICAO", "PRODUTO", "NOME", "NOME DO PRODUTO"],
@@ -42,7 +44,7 @@ function cell(row: unknown[], index: number) {
   return index >= 0 ? row[index] : "";
 }
 
-export async function parseProductSpreadsheet(file: File): Promise<ImportRow[]> {
+export async function parseProductSpreadsheet(file: File, mode: ImportMode): Promise<ImportRow[]> {
   const matrix = await readSheet(file);
   if (matrix.length < 2) throw new Error("A planilha não possui produtos.");
 
@@ -51,8 +53,10 @@ export async function parseProductSpreadsheet(file: File): Promise<ImportRow[]> 
     Object.entries(aliases).map(([key, names]) => [key, findColumn(headers, names)]),
   ) as Record<keyof typeof aliases, number>;
 
-  if (columns.barcode < 0 || columns.name < 0) {
-    throw new Error("A planilha precisa ter as colunas CODIGO e DESCRICAO (ou EAN e PRODUTO).");
+  if (columns.barcode < 0 || (mode === "products" && columns.name < 0) || (mode === "prices" && columns.price < 0)) {
+    throw new Error(mode === "prices"
+      ? "Para atualizar preços, a planilha precisa ter as colunas CODIGO e PRECO."
+      : "A planilha precisa ter as colunas CODIGO e DESCRICAO (ou EAN e PRODUTO).");
   }
 
   const parsed = matrix.slice(1).map((row, offset): ImportRow | null => {
@@ -65,11 +69,11 @@ export async function parseProductSpreadsheet(file: File): Promise<ImportRow[]> 
     const errors: string[] = [];
     const warnings: string[] = [];
     if (!/^\d{8,14}$/.test(barcode)) errors.push("Código deve ter de 8 a 14 números");
-    if (!name) errors.push("Nome não informado");
+    if (mode === "products" && !name) errors.push("Nome não informado");
     if (!Number.isFinite(price) || price < 0) errors.push("Preço inválido");
     if (!Number.isFinite(stockValue) || stockValue < 0) errors.push("Estoque inválido");
-    if (columns.price < 0) warnings.push("Preço não informado; será usado R$ 0,00");
-    if (columns.stock < 0) warnings.push("Estoque não informado; será usado 0");
+    if (mode === "products" && columns.price < 0) warnings.push("Preço não informado; será usado R$ 0,00");
+    if (mode === "products" && columns.stock < 0) warnings.push("Estoque não informado; será usado 0");
 
     const status = normalize(cell(row, columns.status));
     return {

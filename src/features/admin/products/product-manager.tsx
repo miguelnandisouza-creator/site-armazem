@@ -2,13 +2,14 @@
 
 import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
 import {
-  ArrowLeft, Barcode, Camera, Check, Edit3, PackagePlus, Power,
-  Search, Trash2, X,
+  AlertTriangle, ArrowLeft, Barcode, Camera, Check, Edit3, FileSpreadsheet,
+  PackagePlus, Power, Search, Trash2, Upload, X,
 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ProductImage } from "@/components/product-image";
 import { createClient } from "@/lib/supabase/client";
+import { parseProductSpreadsheet, type ImportRow } from "./excel-import";
 import { emptyProduct, type LocalProduct, type ProductDraft } from "./types";
 
 const categories = [
@@ -26,6 +27,11 @@ export function ProductManager() {
   const [query, setQuery] = useState("");
   const [lookupMessage, setLookupMessage] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
+  const [importRows, setImportRows] = useState<ImportRow[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       fetch("/data/imported-products.json")
@@ -181,6 +187,86 @@ export function ProductManager() {
     setFormOpen(false);
   }
 
+  async function selectSpreadsheet(file?: File) {
+    if (!file) return;
+    setImportMessage("Lendo e validando a planilha...");
+    setImportOpen(true);
+    try {
+      const rows = await parseProductSpreadsheet(file);
+      setImportRows(rows);
+      setImportMessage("");
+    } catch (error) {
+      setImportRows([]);
+      setImportMessage(error instanceof Error ? error.message : "Não foi possível ler a planilha.");
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = "";
+    }
+  }
+
+  async function confirmImport() {
+    const validRows = importRows.filter((row) => row.errors.length === 0);
+    if (!validRows.length) return;
+    setImporting(true);
+    setImportMessage("Conectando ao Supabase...");
+    try {
+      const { data: store, error: storeError } = await supabase
+        .from("stores").select("id").eq("slug", "armazem-parada-obrigatoria").single();
+      if (storeError) throw storeError;
+
+      const uniqueCategories = [...new Set(validRows.map((row) => row.category))];
+      const categoryPayload = uniqueCategories.map((name) => ({
+        store_id: store.id,
+        name,
+        slug: slugify(name),
+      }));
+      const { error: categoryError } = await supabase
+        .from("categories").upsert(categoryPayload, { onConflict: "store_id,slug" });
+      if (categoryError) throw categoryError;
+      const { data: savedCategories, error: fetchCategoryError } = await supabase
+        .from("categories").select("id,name").eq("store_id", store.id);
+      if (fetchCategoryError) throw fetchCategoryError;
+      const categoryIds = new Map((savedCategories || []).map((item) => [item.name, item.id]));
+
+      for (let offset = 0; offset < validRows.length; offset += 100) {
+        const chunk = validRows.slice(offset, offset + 100).map((row) => ({
+          store_id: store.id,
+          category_id: categoryIds.get(row.category),
+          ean: row.barcode,
+          name: row.name,
+          brand: row.brand || null,
+          unit: row.unit || null,
+          image_url: row.image || null,
+          price_cents: Math.round(row.price * 100),
+          stock: row.stock,
+          status: row.active ? "active" : "draft",
+        }));
+        setImportMessage(`Enviando ${Math.min(offset + chunk.length, validRows.length)} de ${validRows.length} produtos...`);
+        const { error } = await supabase.from("products")
+          .upsert(chunk, { onConflict: "store_id,ean" });
+        if (error) throw error;
+      }
+
+      setProducts((current) => {
+        const merged = new Map(current.map((product) => [product.barcode, product]));
+        validRows.forEach(({ rowNumber, errors, warnings, ...row }) => {
+          void rowNumber; void errors; void warnings;
+          const existing = merged.get(row.barcode);
+          merged.set(row.barcode, {
+            ...row,
+            id: existing?.id || `import-${row.barcode}`,
+            createdAt: existing?.createdAt || new Date().toISOString(),
+          });
+        });
+        return [...merged.values()];
+      });
+      setImportMessage(`${validRows.length} produtos foram salvos no Supabase.`);
+    } catch (error) {
+      setImportMessage(`Erro na importação: ${error instanceof Error ? error.message : "falha desconhecida"}`);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return <main className="min-h-screen bg-[#f3f1e9] text-[#111315]">
     <div className="hazard-stripe h-2" />
     <header className="border-b-4 border-[#ffd900] bg-[#111315] text-white">
@@ -189,7 +275,11 @@ export function ProductManager() {
           <Link href="/admin" className="grid h-10 w-10 place-items-center border border-white/20" aria-label="Voltar ao painel"><ArrowLeft size={19} /></Link>
           <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#ffd900]">Painel administrativo</p><h1 className="text-xl font-black uppercase sm:text-2xl">Produtos</h1></div>
         </div>
-        <button onClick={openNew} className="flex h-11 items-center gap-2 bg-[#ffd900] px-4 text-sm font-black uppercase text-[#111315]"><PackagePlus size={18} /> <span className="hidden sm:inline">Novo produto</span></button>
+        <div className="flex gap-2">
+          <input ref={importInputRef} type="file" accept=".xlsx" className="hidden" onChange={(event) => void selectSpreadsheet(event.target.files?.[0])} />
+          <button onClick={() => importInputRef.current?.click()} className="flex h-11 items-center gap-2 border border-[#ffd900] px-4 text-sm font-black uppercase text-[#ffd900]"><Upload size={18} /> <span className="hidden sm:inline">Importar Excel</span></button>
+          <button onClick={openNew} className="flex h-11 items-center gap-2 bg-[#ffd900] px-4 text-sm font-black uppercase text-[#111315]"><PackagePlus size={18} /> <span className="hidden sm:inline">Novo produto</span></button>
+        </div>
       </div>
     </header>
 
@@ -218,7 +308,43 @@ export function ProductManager() {
 
     {formOpen && <ProductForm draft={draft} setDraft={setDraft} editing={Boolean(editingId)} lookupMessage={lookupMessage} lookingUp={lookingUp} onLookup={() => lookup()} onScan={() => setScannerOpen(true)} onClose={() => setFormOpen(false)} onSave={save} />}
     {scannerOpen && <BarcodeScanner onClose={() => setScannerOpen(false)} onDetected={(code) => { setScannerOpen(false); void lookup(code); }} />}
+    {importOpen && <ImportPreview rows={importRows} message={importMessage} importing={importing} onConfirm={() => void confirmImport()} onClose={() => setImportOpen(false)} />}
   </main>;
+}
+
+function ImportPreview({ rows, message, importing, onConfirm, onClose }: {
+  rows: ImportRow[]; message: string; importing: boolean; onConfirm: () => void; onClose: () => void;
+}) {
+  const valid = rows.filter((row) => row.errors.length === 0);
+  const invalid = rows.length - valid.length;
+  const warnings = rows.filter((row) => row.warnings.length > 0).length;
+  return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-3 sm:p-6">
+    <section className="mx-auto my-3 w-full max-w-6xl border-2 border-[#111315] bg-[#f3f1e9] shadow-[8px_8px_0_#ffd900]">
+      <header className="flex items-center justify-between bg-[#111315] p-5 text-white">
+        <div className="flex items-center gap-3"><FileSpreadsheet className="text-[#ffd900]" /><div><p className="text-xs font-black uppercase text-[#ffd900]">Conferência antes de salvar</p><h2 className="text-2xl">Importar produtos do Excel</h2></div></div>
+        <button disabled={importing} onClick={onClose} className="grid h-10 w-10 place-items-center border border-white/20 disabled:opacity-40"><X /></button>
+      </header>
+      <div className="p-5 sm:p-7">
+        <div className="grid gap-3 sm:grid-cols-3"><Metric label="Linhas válidas" value={valid.length} /><Metric label="Com avisos" value={warnings} /><Metric label="Com erros" value={invalid} /></div>
+        {message && <p className={`mt-5 p-4 font-bold ${message.startsWith("Erro") ? "bg-red-100 text-red-800" : "bg-[#fff3ad]"}`}>{message}</p>}
+        {invalid > 0 && <p className="mt-5 flex gap-2 bg-red-100 p-4 text-sm font-bold text-red-800"><AlertTriangle className="shrink-0" size={19} />As linhas com erro não serão enviadas. Corrija a planilha e selecione-a novamente para incluí-las.</p>}
+        {rows.length > 0 && <div className="mt-5 max-h-[48vh] overflow-auto border-2 border-[#111315] bg-white">
+          <table className="w-full min-w-[800px] border-collapse text-left text-sm">
+            <thead className="sticky top-0 bg-[#111315] text-xs uppercase text-[#ffd900]"><tr><th className="p-3">Linha</th><th className="p-3">Código</th><th className="p-3">Produto</th><th className="p-3">Categoria</th><th className="p-3">Preço</th><th className="p-3">Estoque</th><th className="p-3">Validação</th></tr></thead>
+            <tbody>{rows.slice(0, 200).map((row) => <tr key={`${row.rowNumber}-${row.barcode}`} className="border-b border-black/10">
+              <td className="p-3">{row.rowNumber}</td><td className="p-3 font-mono">{row.barcode}</td><td className="p-3 font-bold">{row.name}</td><td className="p-3">{row.category}</td><td className="p-3">{formatPrice(row.price)}</td><td className="p-3">{row.stock}</td>
+              <td className={`p-3 font-bold ${row.errors.length ? "text-red-700" : row.warnings.length ? "text-amber-700" : "text-green-700"}`}>{row.errors.join("; ") || row.warnings.join("; ") || "Pronto"}</td>
+            </tr>)}</tbody>
+          </table>
+          {rows.length > 200 && <p className="p-3 text-center text-xs font-bold text-black/55">Prévia das primeiras 200 linhas. Todas as {rows.length} linhas serão processadas.</p>}
+        </div>}
+      </div>
+      <footer className="flex flex-col justify-end gap-3 border-t-2 border-[#111315] bg-white p-5 sm:flex-row">
+        <button disabled={importing} onClick={onClose} className="h-11 px-4 font-black uppercase disabled:opacity-40">Cancelar</button>
+        <button disabled={importing || !valid.length} onClick={onConfirm} className="flex h-11 items-center justify-center gap-2 bg-[#ffd900] px-5 font-black uppercase disabled:opacity-40"><Upload size={18} />{importing ? "Enviando..." : `Confirmar ${valid.length} produtos`}</button>
+      </footer>
+    </section>
+  </div>;
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
@@ -299,3 +425,5 @@ function BarcodeScanner({ onDetected, onClose }: { onDetected: (code: string) =>
 }
 
 const formatPrice = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

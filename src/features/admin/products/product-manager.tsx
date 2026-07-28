@@ -37,6 +37,7 @@ export function ProductManager() {
               (data || []).forEach((row) => {
                 const relation = Array.isArray(row.categories) ? row.categories[0] : row.categories;
                 if (!row.ean) return;
+                const imported = merged.get(row.ean);
                 merged.set(row.ean, {
                   id: row.id,
                   barcode: row.ean,
@@ -44,7 +45,7 @@ export function ProductManager() {
                   brand: row.brand || "",
                   category: relation?.name || "Mercearia",
                   unit: row.unit || "",
-                  image: row.image_url || "",
+                  image: row.image_url || imported?.image || "",
                   price: row.price_cents / 100,
                   stock: row.stock,
                   active: row.status === "active",

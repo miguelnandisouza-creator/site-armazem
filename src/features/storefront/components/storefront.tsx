@@ -47,7 +47,8 @@ export function Storefront() {
               (data || []).forEach((row) => {
                 const relation = Array.isArray(row.categories) ? row.categories[0] : row.categories;
                 if (!row.ean) return;
-                merged.set(row.ean, { id: row.id, barcode: row.ean, name: row.name, brand: row.brand || "", category: relation?.name || "Mercearia", unit: row.unit || "", image: row.image_url || "", price: row.price_cents / 100, stock: row.stock, active: row.status === "active", createdAt: row.created_at });
+                const importedProduct = merged.get(row.ean);
+                merged.set(row.ean, { id: row.id, barcode: row.ean, name: row.name, brand: row.brand || "", category: relation?.name || "Mercearia", unit: row.unit || "", image: row.image_url || importedProduct?.image || "", price: row.price_cents / 100, stock: row.stock, active: row.status === "active", createdAt: row.created_at });
               });
               setCatalogProducts([...merged.values()].filter((product) => product.active).map(toCatalogProduct));
             });

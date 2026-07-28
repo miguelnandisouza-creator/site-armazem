@@ -214,45 +214,50 @@ export function ProductManager() {
         .from("stores").select("id").eq("slug", "armazem-parada-obrigatoria").single();
       if (storeError) throw storeError;
 
+      const existingBarcodes = new Set<string>();
+      for (let offset = 0; offset < validRows.length; offset += 100) {
+        const barcodes = validRows.slice(offset, offset + 100).map((row) => row.barcode);
+        const { data, error } = await supabase.from("products").select("ean")
+          .eq("store_id", store.id).in("ean", barcodes);
+        if (error) throw error;
+        (data || []).forEach((product) => existingBarcodes.add(product.ean));
+      }
+      const existingRows = validRows.filter((row) => existingBarcodes.has(row.barcode));
+      const newRows = validRows.filter((row) => !existingBarcodes.has(row.barcode));
+      const newRowsWithName = newRows.filter((row) => row.name.trim());
+      const newRowsWithoutName = newRows.length - newRowsWithName.length;
+
       if (importMode === "prices") {
-        let updated = 0;
-        let notFound = 0;
-        for (let offset = 0; offset < validRows.length; offset += 20) {
-          const chunk = validRows.slice(offset, offset + 20);
-          setImportMessage(`Atualizando preços ${Math.min(offset + chunk.length, validRows.length)} de ${validRows.length}...`);
+        for (let offset = 0; offset < existingRows.length; offset += 20) {
+          const chunk = existingRows.slice(offset, offset + 20);
+          setImportMessage(`Atualizando preços ${Math.min(offset + chunk.length, existingRows.length)} de ${existingRows.length}...`);
           const results = await Promise.all(chunk.map((row) => supabase.from("products")
             .update({ price_cents: Math.round(row.price * 100) })
-            .eq("store_id", store.id).eq("ean", row.barcode).select("id")));
-          for (const result of results) {
-            if (result.error) throw result.error;
-            if (result.data?.length) updated += 1;
-            else notFound += 1;
-          }
+            .eq("store_id", store.id).eq("ean", row.barcode)));
+          const failed = results.find((result) => result.error);
+          if (failed?.error) throw failed.error;
         }
-        const prices = new Map(validRows.map((row) => [row.barcode, row.price]));
-        setProducts((current) => current.map((product) =>
-          prices.has(product.barcode) ? { ...product, price: prices.get(product.barcode)! } : product,
-        ));
-        setImportMessage(`${updated} preços atualizados no Supabase.${notFound ? ` ${notFound} códigos não existiam e foram ignorados.` : ""}`);
-        return;
       }
 
-      const uniqueCategories = [...new Set(validRows.map((row) => row.category))];
+      const rowsToCreate = newRowsWithName;
+      const uniqueCategories = [...new Set(rowsToCreate.map((row) => row.category))];
       const categoryPayload = uniqueCategories.map((name) => ({
         store_id: store.id,
         name,
         slug: slugify(name),
       }));
-      const { error: categoryError } = await supabase
-        .from("categories").upsert(categoryPayload, { onConflict: "store_id,slug" });
-      if (categoryError) throw categoryError;
+      if (categoryPayload.length) {
+        const { error: categoryError } = await supabase
+          .from("categories").upsert(categoryPayload, { onConflict: "store_id,slug" });
+        if (categoryError) throw categoryError;
+      }
       const { data: savedCategories, error: fetchCategoryError } = await supabase
         .from("categories").select("id,name").eq("store_id", store.id);
       if (fetchCategoryError) throw fetchCategoryError;
       const categoryIds = new Map((savedCategories || []).map((item) => [item.name, item.id]));
 
-      for (let offset = 0; offset < validRows.length; offset += 100) {
-        const chunk = validRows.slice(offset, offset + 100).map((row) => ({
+      for (let offset = 0; offset < rowsToCreate.length; offset += 100) {
+        const chunk = rowsToCreate.slice(offset, offset + 100).map((row) => ({
           store_id: store.id,
           category_id: categoryIds.get(row.category),
           ean: row.barcode,
@@ -264,26 +269,34 @@ export function ProductManager() {
           stock: row.stock,
           status: row.active ? "active" : "draft",
         }));
-        setImportMessage(`Enviando ${Math.min(offset + chunk.length, validRows.length)} de ${validRows.length} produtos...`);
-        const { error } = await supabase.from("products")
-          .upsert(chunk, { onConflict: "store_id,ean" });
+        setImportMessage(`Cadastrando ${Math.min(offset + chunk.length, rowsToCreate.length)} de ${rowsToCreate.length} produtos novos...`);
+        const { error } = await supabase.from("products").insert(chunk);
         if (error) throw error;
       }
 
       setProducts((current) => {
         const merged = new Map(current.map((product) => [product.barcode, product]));
-        validRows.forEach(({ rowNumber, errors, warnings, ...row }) => {
+        if (importMode === "prices") {
+          existingRows.forEach((row) => {
+            const product = merged.get(row.barcode);
+            if (product) merged.set(row.barcode, { ...product, price: row.price });
+          });
+        }
+        rowsToCreate.forEach(({ rowNumber, errors, warnings, ...row }) => {
           void rowNumber; void errors; void warnings;
-          const existing = merged.get(row.barcode);
           merged.set(row.barcode, {
             ...row,
-            id: existing?.id || `import-${row.barcode}`,
-            createdAt: existing?.createdAt || new Date().toISOString(),
+            id: `import-${row.barcode}`,
+            createdAt: new Date().toISOString(),
           });
         });
         return [...merged.values()];
       });
-      setImportMessage(`${validRows.length} produtos foram salvos no Supabase.`);
+      if (importMode === "products") {
+        setImportMessage(`${rowsToCreate.length} produtos novos cadastrados. ${existingRows.length} já existiam e não foram alterados.`);
+      } else {
+        setImportMessage(`${existingRows.length} preços atualizados e ${rowsToCreate.length} produtos novos cadastrados.${newRowsWithoutName ? ` ${newRowsWithoutName} novos códigos não foram cadastrados porque estavam sem descrição.` : ""}`);
+      }
     } catch (error) {
       setImportMessage(`Erro na importação: ${error instanceof Error ? error.message : "falha desconhecida"}`);
     } finally {
@@ -354,8 +367,8 @@ function ImportPreview({ rows, message, importing, mode, onModeChange, onSelectF
       <div className="p-5 sm:p-7">
         <p className="text-xs font-black uppercase text-black/55">O que deseja fazer?</p>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
-          <button disabled={importing} onClick={() => onModeChange("products")} className={`border-2 p-4 text-left ${mode === "products" ? "border-[#111315] bg-[#ffd900]" : "border-black/20 bg-white"}`}><strong className="block uppercase">Cadastrar produtos</strong><span className="mt-1 block text-sm">Cria produtos novos e atualiza todos os dados dos existentes.</span></button>
-          <button disabled={importing} onClick={() => onModeChange("prices")} className={`border-2 p-4 text-left ${mode === "prices" ? "border-[#111315] bg-[#ffd900]" : "border-black/20 bg-white"}`}><strong className="block uppercase">Atualizar somente preços</strong><span className="mt-1 block text-sm">Altera apenas o preço. Códigos não cadastrados são ignorados.</span></button>
+          <button disabled={importing} onClick={() => onModeChange("products")} className={`border-2 p-4 text-left ${mode === "products" ? "border-[#111315] bg-[#ffd900]" : "border-black/20 bg-white"}`}><strong className="block uppercase">Cadastrar produtos</strong><span className="mt-1 block text-sm">Cadastra somente produtos novos. Os que já existem não são alterados.</span></button>
+          <button disabled={importing} onClick={() => onModeChange("prices")} className={`border-2 p-4 text-left ${mode === "prices" ? "border-[#111315] bg-[#ffd900]" : "border-black/20 bg-white"}`}><strong className="block uppercase">Atualizar preços</strong><span className="mt-1 block text-sm">Atualiza o preço dos existentes e cadastra os produtos que ainda não existem.</span></button>
         </div>
         <button disabled={importing} onClick={onSelectFile} className="mt-4 flex h-12 w-full items-center justify-center gap-2 border-2 border-dashed border-[#111315] bg-white font-black uppercase"><FileSpreadsheet size={19} />{rows.length ? "Escolher outra planilha" : "Selecionar planilha .xlsx"}</button>
         {rows.length > 0 && <div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Linhas válidas" value={valid.length} /><Metric label="Com avisos" value={warnings} /><Metric label="Com erros" value={invalid} /></div>}
